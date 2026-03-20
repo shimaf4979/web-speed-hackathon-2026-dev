@@ -1,7 +1,14 @@
 import { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
 
-export const validate = (values: AuthFormData): Partial<Record<keyof AuthFormData, string>> => {
-  const errors: Partial<Record<keyof AuthFormData, string>> = {};
+export interface AuthFormErrors {
+  type?: string;
+  username?: string;
+  name?: string;
+  password?: string;
+}
+
+export const validate = (values: AuthFormData): AuthFormErrors => {
+  const errors: AuthFormErrors = {};
 
   const normalizedName = values.name?.trim() || "";
   const normalizedPassword = values.password?.trim() || "";
