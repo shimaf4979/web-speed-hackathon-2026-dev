@@ -124,6 +124,16 @@ recompress-public-media:
 recompress-public-media-apply:
   pnpm --dir {{app_dir}} run recompress:public-media
 
+# `application` で大きい投稿画像の `.avif` 変換候補を dry-run し、`reports/avif-variant-report.json` に削減見込みをまとめる。
+[group('分析')]
+generate-avif-variants:
+  pnpm --dir {{app_dir}} run generate:avif-variants:dry-run
+
+# `application` で大きい投稿画像に `.avif` を生成し、クライアントの AVIF 対応 ID 一覧も更新する。適用後は VRT と代表画像の目視確認を前提に使う。
+[group('分析')]
+generate-avif-variants-apply:
+  pnpm --dir {{app_dir}} run generate:avif-variants
+
 # `analyze-bundle` と `analyze-lighthouse` を順番に実行し、bundle 可視化と Lighthouse の両方のレポートをまとめて更新する。
 [group('分析')]
 analyze-all: analyze-bundle analyze-lighthouse

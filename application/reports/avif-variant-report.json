@@ -1,0 +1,56 @@
+{
+  "apply": true,
+  "generatedAt": "2026-03-20T08:13:07.126Z",
+  "summary": {
+    "afterBytes": 9375639,
+    "beforeBytes": 26152592,
+    "savedBytes": 16776953,
+    "generatedCount": 5
+  },
+  "thresholds": {
+    "minSavedBytes": 8192,
+    "minSourceBytes": 4194304
+  },
+  "results": [
+    {
+      "sourcePath": "public/images/85946f86-c0bd-4d6b-83b7-94eb32dcbcf4.webp",
+      "outputPath": "public/images/85946f86-c0bd-4d6b-83b7-94eb32dcbcf4.avif",
+      "imageId": "85946f86-c0bd-4d6b-83b7-94eb32dcbcf4",
+      "beforeBytes": 5957930,
+      "afterBytes": 2206628,
+      "savedBytes": 3751302
+    },
+    {
+      "sourcePath": "public/images/078c4d42-12e3-4c1d-823c-9ba552f6b066.webp",
+      "outputPath": "public/images/078c4d42-12e3-4c1d-823c-9ba552f6b066.avif",
+      "imageId": "078c4d42-12e3-4c1d-823c-9ba552f6b066",
+      "beforeBytes": 5064232,
+      "afterBytes": 1646793,
+      "savedBytes": 3417439
+    },
+    {
+      "sourcePath": "public/images/029b4b75-bbcc-4aa5-8bd7-e4bb12a33cd3.webp",
+      "outputPath": "public/images/029b4b75-bbcc-4aa5-8bd7-e4bb12a33cd3.avif",
+      "imageId": "029b4b75-bbcc-4aa5-8bd7-e4bb12a33cd3",
+      "beforeBytes": 5414440,
+      "afterBytes": 2082064,
+      "savedBytes": 3332376
+    },
+    {
+      "sourcePath": "public/images/26117ade-f330-46a2-8c48-767b6f472613.webp",
+      "outputPath": "public/images/26117ade-f330-46a2-8c48-767b6f472613.avif",
+      "imageId": "26117ade-f330-46a2-8c48-767b6f472613",
+      "beforeBytes": 4815996,
+      "afterBytes": 1677439,
+      "savedBytes": 3138557
+    },
+    {
+      "sourcePath": "public/images/eb487309-79ed-40d0-9fee-382ed8486b70.webp",
+      "outputPath": "public/images/eb487309-79ed-40d0-9fee-382ed8486b70.avif",
+      "imageId": "eb487309-79ed-40d0-9fee-382ed8486b70",
+      "beforeBytes": 4899994,
+      "afterBytes": 1762715,
+      "savedBytes": 3137279
+    }
+  ]
+}
