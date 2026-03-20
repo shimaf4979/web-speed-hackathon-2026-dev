@@ -1,9 +1,11 @@
 import { NewDirectMessageFormData } from "@web-speed-hackathon-2026/client/src/direct_message/types";
 
-export const validate = (
-  values: NewDirectMessageFormData,
-): Partial<Record<keyof NewDirectMessageFormData, string>> => {
-  const errors: Partial<Record<keyof NewDirectMessageFormData, string>> = {};
+export interface NewDMFormErrors {
+  username?: string;
+}
+
+export const validate = (values: NewDirectMessageFormData): NewDMFormErrors => {
+  const errors: NewDMFormErrors = {};
 
   const normalizedUsername = values.username?.trim().replace(/^@/, "") || "";
 

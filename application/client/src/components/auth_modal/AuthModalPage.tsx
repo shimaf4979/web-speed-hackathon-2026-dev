@@ -17,7 +17,7 @@ export const AuthModalPage = ({ onRequestCloseModal, onSubmit }: Props) => {
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [touched, setTouched] = useState<{ username?: boolean; name?: boolean; password?: boolean }>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ export const AuthModalPage = ({ onRequestCloseModal, onSubmit }: Props) => {
   const errors = validate(formData);
   const hasErrors = Object.keys(errors).length > 0;
 
-  const handleBlur = useCallback((field: string) => {
+  const handleBlur = useCallback((field: "username" | "name" | "password") => {
     setTouched((t) => ({ ...t, [field]: true }));
   }, []);
 
