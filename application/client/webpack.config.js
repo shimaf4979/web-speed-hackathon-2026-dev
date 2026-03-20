@@ -43,7 +43,28 @@ const config = {
       {
         exclude: /node_modules/,
         test: /\.(jsx?|tsx?|mjs|cjs)$/,
-        use: [{ loader: "babel-loader" }],
+        use: [
+          {
+            loader: "swc-loader",
+            options: {
+              jsc: {
+                parser: {
+                  syntax: "typescript",
+                  tsx: true,
+                },
+                transform: {
+                  react: {
+                    runtime: "automatic",
+                    development: false,
+                  },
+                },
+              },
+              env: {
+                targets: "last 2 Chrome versions",
+              },
+            },
+          },
+        ],
       },
       {
         test: /\.css$/i,

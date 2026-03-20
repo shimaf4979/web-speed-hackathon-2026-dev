@@ -35,7 +35,8 @@
       "sqlite3",
       "negaposi-analyzer-ja",
       "sharp",
-      "ffmpeg-static"
+      "ffmpeg-static",
+      "@swc/core"
     ]
   },
   "packageManager": "pnpm@10.32.1"
