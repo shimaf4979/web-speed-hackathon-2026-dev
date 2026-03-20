@@ -1,5 +1,3 @@
-import Bluebird from "bluebird";
-import kuromoji, { type Tokenizer, type IpadicFeatures } from "kuromoji";
 import {
   useEffect,
   useLayoutEffect,
@@ -9,17 +7,42 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import type { IpadicFeatures, Tokenizer } from "kuromoji";
 
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
-import {
-  extractTokens,
-  filterSuggestionsBM25,
-} from "@web-speed-hackathon-2026/client/src/utils/bm25_search";
 import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface Props {
   isStreaming: boolean;
   onSendMessage: (message: string) => void;
+}
+
+let tokenizerPromise: Promise<Tokenizer<IpadicFeatures>> | null = null;
+let suggestionsPromise: Promise<string[]> | null = null;
+
+const fallbackTokenize = (text: string) =>
+  (text.toLowerCase().match(/[a-z0-9]+|[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]+/gu) ??
+    [])
+    .filter((token) => token.length > 0);
+
+async function loadTokenizer(): Promise<Tokenizer<IpadicFeatures>> {
+  tokenizerPromise ??= (async () => {
+    const [{ default: Bluebird }, kuromojiModule] = await Promise.all([
+      import("bluebird"),
+      import("kuromoji"),
+    ]);
+    const builder = Bluebird.promisifyAll(kuromojiModule.default.builder({ dicPath: "/dicts" }));
+    return builder.buildAsync();
+  })();
+
+  return tokenizerPromise;
+}
+
+async function loadSuggestions(): Promise<string[]> {
+  suggestionsPromise ??= fetchJSON<{ suggestions: string[] }>("/api/v1/crok/suggestions").then(
+    ({ suggestions }) => suggestions,
+  );
+  return suggestionsPromise;
 }
 
 // トークン単位でハイライト
@@ -97,8 +120,7 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     let mounted = true;
 
     const init = async () => {
-      const builder = Bluebird.promisifyAll(kuromoji.builder({ dicPath: "/dicts" }));
-      const nextTokenizer = await builder.buildAsync();
+      const nextTokenizer = await loadTokenizer();
       if (mounted) {
         setTokenizer(nextTokenizer);
       }
@@ -114,20 +136,35 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     let cancelled = false;
 
     const updateSuggestions = async () => {
-      if (!tokenizer || !inputValue.trim()) {
+      if (!inputValue.trim()) {
         setSuggestions([]);
         setQueryTokens([]);
         setShowSuggestions(false);
         return;
       }
 
-      const { suggestions: candidates } = await fetchJSON<{ suggestions: string[] }>(
-        "/api/v1/crok/suggestions",
-      );
+      const candidates = await loadSuggestions();
       if (cancelled) {
         return;
       }
 
+      if (!tokenizer) {
+        const tokens = fallbackTokenize(inputValue);
+        const results = candidates
+          .filter((candidate) =>
+            tokens.some((token) => candidate.toLowerCase().includes(token.toLowerCase())),
+          )
+          .slice(0, 10);
+
+        setQueryTokens(tokens);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+        return;
+      }
+
+      const [{ extractTokens, filterSuggestionsBM25 }] = await Promise.all([
+        import("@web-speed-hackathon-2026/client/src/utils/bm25_search"),
+      ]);
       const tokens = extractTokens(tokenizer.tokenize(inputValue));
       const results = filterSuggestionsBM25(tokenizer, candidates, tokens);
 
