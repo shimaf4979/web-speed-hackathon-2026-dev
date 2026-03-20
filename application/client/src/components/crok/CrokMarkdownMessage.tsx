@@ -1,24 +1,54 @@
-import "katex/dist/katex.min.css";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import Markdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-
-import { CodeBlock } from "@web-speed-hackathon-2026/client/src/components/crok/CodeBlock";
 
 interface Props {
   content: string;
 }
 
+const CrokRichMarkdownMessage = lazy(async () =>
+  import("@web-speed-hackathon-2026/client/src/components/crok/CrokRichMarkdownMessage").then(
+    (module) => ({
+      default: module.CrokRichMarkdownMessage,
+    }),
+  ),
+);
+
+const RICH_MARKDOWN_DELAY_MS = 750;
+
+function hasRichMarkdown(content: string) {
+  return /```|`[^`\n]+`|\$[^$\n]+\$|\$\$[\s\S]+?\$\$|\|.+\|/.test(content);
+}
+
+const BasicMarkdownMessage = ({ content }: Props) => <Markdown>{content}</Markdown>;
+
 export const CrokMarkdownMessage = ({ content }: Props) => {
+  const [shouldRenderRich, setShouldRenderRich] = useState(false);
+  const needsRichMarkdown = hasRichMarkdown(content);
+
+  useEffect(() => {
+    setShouldRenderRich(false);
+
+    if (!needsRichMarkdown) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShouldRenderRich(true);
+    }, RICH_MARKDOWN_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [content, needsRichMarkdown]);
+
+  if (!needsRichMarkdown || !shouldRenderRich) {
+    return <BasicMarkdownMessage content={content} />;
+  }
+
   return (
-    <Markdown
-      components={{ pre: CodeBlock }}
-      rehypePlugins={[rehypeKatex]}
-      remarkPlugins={[remarkMath, remarkGfm]}
-    >
-      {content}
-    </Markdown>
+    <Suspense fallback={<BasicMarkdownMessage content={content} />}>
+      <CrokRichMarkdownMessage content={content} />
+    </Suspense>
   );
 };
