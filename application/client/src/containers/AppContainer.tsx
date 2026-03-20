@@ -1,5 +1,4 @@
 import { lazy, Suspense, type ReactNode, useCallback, useEffect, useId, useState } from "react";
-import { Helmet, HelmetProvider } from "react-helmet";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 
 import { AppPage } from "@web-speed-hackathon-2026/client/src/components/application/AppPage";
@@ -63,16 +62,13 @@ export const AppContainer = () => {
   }, [pathname]);
 
   const [activeUser, setActiveUser] = useState<Models.User | null>(null);
-  const [isLoadingActiveUser, setIsLoadingActiveUser] = useState(true);
   useEffect(() => {
     void fetchJSON<Models.User>("/api/v1/me")
       .then((user) => {
         setActiveUser(user);
       })
-      .finally(() => {
-        setIsLoadingActiveUser(false);
-      });
-  }, [setActiveUser, setIsLoadingActiveUser]);
+      .catch(() => {});
+  }, [setActiveUser]);
   const handleLogout = useCallback(async () => {
     const { sendJSON } = await import("@web-speed-hackathon-2026/client/src/utils/send_json_gzip");
     await sendJSON("/api/v1/signout", {});
@@ -83,18 +79,8 @@ export const AppContainer = () => {
   const authModalId = useId();
   const newPostModalId = useId();
 
-  if (isLoadingActiveUser) {
-    return (
-      <HelmetProvider>
-        <Helmet>
-          <title>読込中 - CaX</title>
-        </Helmet>
-      </HelmetProvider>
-    );
-  }
-
   return (
-    <HelmetProvider>
+    <>
       <AppPage
         activeUser={activeUser}
         authModalId={authModalId}
@@ -165,6 +151,6 @@ export const AppContainer = () => {
 
       <AuthModalContainer id={authModalId} onUpdateActiveUser={setActiveUser} />
       <NewPostModalContainer id={newPostModalId} />
-    </HelmetProvider>
+    </>
   );
 };
