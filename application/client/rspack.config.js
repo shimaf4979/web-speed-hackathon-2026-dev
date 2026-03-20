@@ -140,12 +140,7 @@ const config = {
     providedExports: true,
     sideEffects: true,
   },
-  ignoreWarnings: [
-    {
-      module: /@ffmpeg/,
-      message: /Critical dependency: the request of a dependency is an expression/,
-    },
-  ],
+  ignoreWarnings: [],
 };
 
 module.exports = config;

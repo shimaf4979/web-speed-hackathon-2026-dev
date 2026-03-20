@@ -30,7 +30,6 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
   });
 
   const [hasFileError, setHasFileError] = useState(false);
-  const [isConverting, setIsConverting] = useState(false);
 
   const handleChangeText = useCallback<ChangeEventHandler<HTMLTextAreaElement>>((ev) => {
     const value = ev.currentTarget.value;
@@ -46,29 +45,12 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
-      setIsConverting(true);
-
-      Promise.all(
-        files.map(async (file) => {
-          const [{ MagickFormat }, { convertImage }] = await Promise.all([
-            import("@imagemagick/magick-wasm"),
-            import("@web-speed-hackathon-2026/client/src/utils/convert_image"),
-          ]);
-          const blob = await convertImage(file, { extension: MagickFormat.WebP });
-          return new File([blob], "converted.webp", { type: "image/webp" });
-        }),
-      )
-        .then((convertedFiles) => {
-          setParams((params) => ({
-            ...params,
-            images: convertedFiles,
-            movie: undefined,
-            sound: undefined,
-          }));
-
-          setIsConverting(false);
-        })
-        .catch(console.error);
+      setParams((params) => ({
+        ...params,
+        images: files,
+        movie: undefined,
+        sound: undefined,
+      }));
     }
   }, []);
 
@@ -78,21 +60,12 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
-      setIsConverting(true);
-
-      import("@web-speed-hackathon-2026/client/src/utils/convert_sound")
-        .then(({ convertSound }) => convertSound(file, { extension: "mp3" }))
-        .then((converted) => {
-          setParams((params) => ({
-            ...params,
-            images: [],
-            movie: undefined,
-            sound: new File([converted], "converted.mp3", { type: "audio/mpeg" }),
-          }));
-
-          setIsConverting(false);
-        })
-        .catch(console.error);
+      setParams((params) => ({
+        ...params,
+        images: [],
+        movie: undefined,
+        sound: file,
+      }));
     }
   }, []);
 
@@ -102,23 +75,12 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
-      setIsConverting(true);
-
-      import("@web-speed-hackathon-2026/client/src/utils/convert_movie")
-        .then(({ convertMovie }) => convertMovie(file, { extension: "webm", size: undefined }))
-        .then((converted) => {
-          setParams((params) => ({
-            ...params,
-            images: [],
-            movie: new File([converted], "converted.webm", {
-              type: "video/webm",
-            }),
-            sound: undefined,
-          }));
-
-          setIsConverting(false);
-        })
-        .catch(console.error);
+      setParams((params) => ({
+        ...params,
+        images: [],
+        movie: file,
+        sound: undefined,
+      }));
     }
   }, []);
 
@@ -168,11 +130,8 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
         />
       </div>
 
-      <ModalSubmitButton
-        disabled={isConverting || isLoading || params.text === ""}
-        loading={isConverting || isLoading}
-      >
-        {isConverting || isLoading ? "変換中" : "投稿する"}
+      <ModalSubmitButton disabled={isLoading || params.text === ""} loading={isLoading}>
+        {isLoading ? "投稿中" : "投稿する"}
       </ModalSubmitButton>
 
       <ModalErrorMessage>
