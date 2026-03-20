@@ -1,17 +1,34 @@
 import { request } from "@web-speed-hackathon-2026/client/src/utils/http_common";
 
-let pakoModulePromise: Promise<typeof import("pako")> | null = null;
+async function compressGzip(data: Uint8Array): Promise<Uint8Array> {
+  const cs = new CompressionStream("gzip");
+  const writer = cs.writable.getWriter();
+  writer.write(data);
+  writer.close();
 
-async function loadPako() {
-  pakoModulePromise ??= import("pako");
-  return pakoModulePromise;
+  const reader = cs.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+
+  let totalLength = 0;
+  for (const chunk of chunks) totalLength += chunk.byteLength;
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result;
 }
 
 export async function sendJSON<T>(url: string, data: object): Promise<T> {
-  const { gzip } = await loadPako();
   const jsonString = JSON.stringify(data);
   const uint8Array = new TextEncoder().encode(jsonString);
-  const compressed = gzip(uint8Array);
+  const compressed = await compressGzip(uint8Array);
 
   return request<T>(
     url,
