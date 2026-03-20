@@ -4,9 +4,6 @@ interface SoundMetadata {
 }
 
 function readRiffInfoTag(data: Buffer, tagId: string): string | undefined {
-  const listStr = "LIST";
-  const infoStr = "INFO";
-
   for (let i = 0; i < data.length - 12; i++) {
     if (
       data[i] === 0x4c &&

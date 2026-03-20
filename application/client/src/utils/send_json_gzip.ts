@@ -3,7 +3,7 @@ import { request } from "@web-speed-hackathon-2026/client/src/utils/http_common"
 async function compressGzip(data: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream("gzip");
   const writer = cs.writable.getWriter();
-  writer.write(data);
+  void writer.write(data as ArrayBufferView<ArrayBuffer>);
   writer.close();
 
   const reader = cs.readable.getReader();
@@ -33,7 +33,7 @@ export async function sendJSON<T>(url: string, data: object): Promise<T> {
   return request<T>(
     url,
     {
-      body: compressed,
+      body: compressed as Uint8Array<ArrayBuffer>,
       headers: {
         Accept: "application/json",
         "Content-Encoding": "gzip",

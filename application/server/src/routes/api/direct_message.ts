@@ -14,14 +14,14 @@ export const directMessageRouter = Router();
 function buildConversationIncludes() {
   return [
     {
-      association: "initiator",
-      include: [{ association: "profileImage" }],
+      association: "initiator" as const,
+      include: [{ association: "profileImage" as const }],
     },
     {
-      association: "member",
-      include: [{ association: "profileImage" }],
+      association: "member" as const,
+      include: [{ association: "profileImage" as const }],
     },
-  ] as const;
+  ];
 }
 
 directMessageRouter.get("/dm", async (req, res) => {
@@ -50,7 +50,12 @@ directMessageRouter.get("/dm", async (req, res) => {
   });
 
   const sorted = conversations.map((conversation) => {
-    const serialized = conversation.toJSON();
+    const serialized = conversation.toJSON() as Record<string, unknown> & {
+      id: string;
+      initiator?: { id: string; profileImage?: unknown };
+      member?: { id: string; profileImage?: unknown };
+      messages?: Array<{ id: string; body: string; createdAt: string; isRead: boolean; senderId: string }>;
+    };
     const peer =
       serialized.initiator?.id !== req.session.userId ? serialized.initiator : serialized.member;
     const lastMessage = serialized.messages?.at(-1) ?? null;
