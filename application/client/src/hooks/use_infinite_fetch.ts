@@ -9,11 +9,17 @@ interface ReturnValues<T> {
   fetchMore: () => void;
 }
 
+interface Options {
+  serverPagination?: boolean;
+}
+
 export function useInfiniteFetch<T>(
   apiPath: string,
   fetcher: (apiPath: string) => Promise<T[]>,
+  options?: Options,
 ): ReturnValues<T> {
   const internalRef = useRef({ hasReachedEnd: false, isLoading: false, offset: 0 });
+  const serverPagination = options?.serverPagination === true;
 
   const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>({
     data: [],
@@ -37,19 +43,23 @@ export function useInfiniteFetch<T>(
       offset,
     };
 
-    const separator = apiPath.includes("?") ? "&" : "?";
-    void fetcher(`${apiPath}${separator}limit=${LIMIT}&offset=${offset}`).then(
-      (pageData) => {
+    const requestPath = serverPagination
+      ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${LIMIT}&offset=${offset}`
+      : apiPath;
+
+    void fetcher(requestPath).then(
+      (items) => {
+        const nextItems = serverPagination ? items : items.slice(offset, offset + LIMIT);
         setResult((cur) => ({
           ...cur,
-          data: [...cur.data, ...pageData],
+          data: [...cur.data, ...nextItems],
           error: null,
           isLoading: false,
         }));
         internalRef.current = {
-          hasReachedEnd: pageData.length < LIMIT,
+          hasReachedEnd: nextItems.length < LIMIT,
           isLoading: false,
-          offset: offset + pageData.length,
+          offset: offset + nextItems.length,
         };
       },
       (error) => {
