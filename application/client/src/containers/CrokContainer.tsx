@@ -64,6 +64,8 @@ export const CrokContainer = ({ activeUser, authModalId }: Props) => {
 
       setMessages((prev) => [...prev, userMessage, assistantMessage]);
 
+      void import("@web-speed-hackathon-2026/client/src/components/crok/CrokMarkdownMessage");
+
       const encodedPrompt = encodeURIComponent(userInput);
       start(`/api/v1/crok?prompt=${encodedPrompt}`);
     },
