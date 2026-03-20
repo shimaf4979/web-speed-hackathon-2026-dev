@@ -11,32 +11,19 @@ import type { IpadicFeatures, Tokenizer } from "kuromoji";
 
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
 import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+import { loadKuromojiTokenizer } from "@web-speed-hackathon-2026/client/src/utils/load_kuromoji_tokenizer";
 
 interface Props {
   isStreaming: boolean;
   onSendMessage: (message: string) => void;
 }
 
-let tokenizerPromise: Promise<Tokenizer<IpadicFeatures>> | null = null;
 let suggestionsPromise: Promise<string[]> | null = null;
 
 const fallbackTokenize = (text: string) =>
   (text.toLowerCase().match(/[a-z0-9]+|[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]+/gu) ??
     [])
     .filter((token) => token.length > 0);
-
-async function loadTokenizer(): Promise<Tokenizer<IpadicFeatures>> {
-  tokenizerPromise ??= (async () => {
-    const [{ default: Bluebird }, kuromojiModule] = await Promise.all([
-      import("bluebird"),
-      import("kuromoji"),
-    ]);
-    const builder = Bluebird.promisifyAll(kuromojiModule.default.builder({ dicPath: "/dicts" }));
-    return builder.buildAsync();
-  })();
-
-  return tokenizerPromise;
-}
 
 async function loadSuggestions(): Promise<string[]> {
   suggestionsPromise ??= fetchJSON<{ suggestions: string[] }>("/api/v1/crok/suggestions").then(
@@ -120,7 +107,7 @@ export const ChatInput = ({ isStreaming, onSendMessage }: Props) => {
     let mounted = true;
 
     const init = async () => {
-      const nextTokenizer = await loadTokenizer();
+      const nextTokenizer = await loadKuromojiTokenizer();
       if (mounted) {
         setTokenizer(nextTokenizer);
       }
