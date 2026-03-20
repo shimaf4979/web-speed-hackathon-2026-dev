@@ -49,12 +49,12 @@ function getImageVariant(filePath) {
 
 function getImageOptions(variant) {
   if (variant === "thumb") {
-    return { effort: 6, quality: 68 };
+    return { effort: 6, quality: 64 };
   }
   if (variant === "profile") {
     return { effort: 6, quality: 78 };
   }
-  return { effort: 6, quality: 82, smartSubsample: true };
+  return { effort: 6, quality: 80, smartSubsample: true };
 }
 
 async function recompressImage(filePath) {
@@ -134,8 +134,10 @@ async function main() {
   const shouldProcessMovies = moviesOnly || (imagesOnly === false && moviesOnly === false);
 
   const imageFiles = shouldProcessImages
-    ? (await walk(path.resolve(publicDir, "images"))).filter((filePath) =>
-        filePath.endsWith(".webp"),
+    ? (await walk(path.resolve(publicDir, "images"))).filter(
+        (filePath) =>
+          filePath.endsWith(".webp") &&
+          filePath.includes(`${path.sep}profiles${path.sep}`) === false,
       )
     : [];
   const movieFiles = shouldProcessMovies
