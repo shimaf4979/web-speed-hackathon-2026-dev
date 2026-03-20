@@ -132,6 +132,9 @@ export const SearchPage = ({ query, results }: Props) => {
         <form onSubmit={handleSubmit}>
           <div className="flex gap-2">
             <div className="flex flex-1 flex-col">
+              <label className="sr-only" htmlFor={inputId}>
+                検索 (例: キーワード since:2025-01-01 until:2025-12-31)
+              </label>
               <input
                 id={inputId}
                 name="searchText"

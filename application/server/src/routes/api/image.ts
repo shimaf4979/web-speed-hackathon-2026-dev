@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/paths";
 import { convertImageToWebP } from "@web-speed-hackathon-2026/server/src/utils/convert_image";
+import { extractImageDescription } from "@web-speed-hackathon-2026/server/src/utils/extract_image_description";
 
 const EXTENSION = "webp";
 const THUMB_EXTENSION = "thumb.webp";
@@ -22,7 +23,9 @@ imageRouter.post("/images", async (req, res) => {
   }
 
   let imageBuffer: Buffer;
+  let alt = "";
   try {
+    alt = extractImageDescription(req.body);
     imageBuffer = await convertImageToWebP(req.body);
   } catch {
     throw new httpErrors.BadRequest("Invalid image file");
@@ -38,5 +41,5 @@ imageRouter.post("/images", async (req, res) => {
     fs.writeFile(thumbPath, await convertImageToWebP(req.body, { maxWidth: 640, quality: 72 })),
   ]);
 
-  return res.status(200).type("application/json").send({ id: imageId });
+  return res.status(200).type("application/json").send({ alt, id: imageId });
 });

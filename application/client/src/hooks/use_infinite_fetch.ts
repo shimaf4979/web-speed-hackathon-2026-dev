@@ -11,6 +11,22 @@ interface ReturnValues<T> {
 
 interface Options {
   serverPagination?: boolean;
+  prefetchKey?: string;
+}
+
+declare global {
+  interface Window {
+    __PREFETCH_TIMELINE__?: Promise<unknown[]>;
+  }
+}
+
+function consumePrefetch<T>(key: string): Promise<T[]> | null {
+  if (key === "__PREFETCH_TIMELINE__" && window.__PREFETCH_TIMELINE__) {
+    const p = window.__PREFETCH_TIMELINE__ as Promise<T[]>;
+    window.__PREFETCH_TIMELINE__ = undefined;
+    return p;
+  }
+  return null;
 }
 
 export function useInfiniteFetch<T>(
@@ -20,6 +36,7 @@ export function useInfiniteFetch<T>(
 ): ReturnValues<T> {
   const internalRef = useRef({ hasReachedEnd: false, isLoading: false, offset: 0 });
   const serverPagination = options?.serverPagination === true;
+  const prefetchKey = options?.prefetchKey;
 
   const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>({
     data: [],
@@ -43,11 +60,15 @@ export function useInfiniteFetch<T>(
       offset,
     };
 
-    const requestPath = serverPagination
-      ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${LIMIT}&offset=${offset}`
-      : apiPath;
+    const prefetched = offset === 0 && prefetchKey ? consumePrefetch<T>(prefetchKey) : null;
+    const dataPromise = prefetched ?? (() => {
+      const requestPath = serverPagination
+        ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${LIMIT}&offset=${offset}`
+        : apiPath;
+      return fetcher(requestPath);
+    })();
 
-    void fetcher(requestPath).then(
+    void dataPromise.then(
       (items) => {
         const nextItems = serverPagination ? items : items.slice(offset, offset + LIMIT);
         setResult((cur) => ({
@@ -75,7 +96,7 @@ export function useInfiniteFetch<T>(
         };
       },
     );
-  }, [apiPath, fetcher]);
+  }, [apiPath, fetcher, prefetchKey]);
 
   useEffect(() => {
     if (apiPath === "") {

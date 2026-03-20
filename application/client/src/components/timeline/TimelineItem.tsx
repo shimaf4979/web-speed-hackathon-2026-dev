@@ -110,14 +110,18 @@ export const TimelineItem = ({ post, prioritizeImage = false }: Props) => {
           ) : null}
           {post.movie ? (
             <div className="relative mt-2 w-full">
-              <Suspense fallback={null}>
+              <Suspense fallback={
+                <div className="border-cax-border bg-cax-surface-subtle overflow-hidden rounded-lg border" style={{ aspectRatio: "1/1" }} />
+              }>
                 <MovieArea movie={post.movie} />
               </Suspense>
             </div>
           ) : null}
           {post.sound ? (
             <div className="relative mt-2 w-full">
-              <Suspense fallback={null}>
+              <Suspense fallback={
+                <div className="border-cax-border bg-cax-surface-subtle overflow-hidden rounded-lg border" style={{ minHeight: "100px" }} />
+              }>
                 <SoundArea sound={post.sound} />
               </Suspense>
             </div>
