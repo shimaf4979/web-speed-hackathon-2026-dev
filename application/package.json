@@ -12,6 +12,8 @@
     "analyze:lighthouse:desktop": "node ./scripts/run-lighthouse.mjs --device desktop",
     "generate:image-thumbnails": "node ./scripts/generate-image-thumbnails.mjs --apply",
     "generate:image-thumbnails:dry-run": "node ./scripts/generate-image-thumbnails.mjs",
+    "generate:profile-image-variants": "node ./scripts/generate-profile-image-variants.mjs --apply",
+    "generate:profile-image-variants:dry-run": "node ./scripts/generate-profile-image-variants.mjs",
     "compress:public-assets": "node ./scripts/compress-public-assets.mjs --apply",
     "compress:public-assets:dry-run": "node ./scripts/compress-public-assets.mjs",
     "generate:avif-variants": "node ./scripts/generate-avif-variants.mjs --apply",

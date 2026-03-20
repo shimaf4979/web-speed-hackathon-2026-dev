@@ -2,6 +2,7 @@ import {
   avifImageIds,
   avifThumbImageIds,
 } from "@web-speed-hackathon-2026/client/src/utils/avif_image_ids";
+import { avatarProfileImageIds } from "@web-speed-hackathon-2026/client/src/utils/profile_image_ids";
 
 export function getImagePath(imageId: string, variant: "full" | "thumb" = "full"): string {
   const suffix = variant === "thumb" ? ".thumb" : "";
@@ -32,6 +33,12 @@ export function getSoundPath(soundId: string): string {
   return `/sounds/${soundId}.mp3`;
 }
 
-export function getProfileImagePath(profileImageId: string): string {
+export function getProfileImagePath(
+  profileImageId: string,
+  variant: "full" | "avatar" = "full",
+): string {
+  if (variant === "avatar" && avatarProfileImageIds.has(profileImageId)) {
+    return `/images/profiles/${profileImageId}.avatar.webp`;
+  }
   return `/images/profiles/${profileImageId}.webp`;
 }
