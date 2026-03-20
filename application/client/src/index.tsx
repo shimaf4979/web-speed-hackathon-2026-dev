@@ -7,6 +7,10 @@ if (/^\/posts\/[^/?#]+/.test(window.location.pathname)) {
   void import("@web-speed-hackathon-2026/client/src/containers/PostContainer");
 }
 
+if (window.location.pathname === "/search") {
+  void import("@web-speed-hackathon-2026/client/src/containers/SearchContainer");
+}
+
 const mount = () => {
   createRoot(document.getElementById("app")!).render(
     <BrowserRouter>
