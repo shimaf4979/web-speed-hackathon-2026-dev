@@ -99,7 +99,7 @@ export const TimelineItem = ({ post, prioritizeImage = false }: Props) => {
             </Link>
           </p>
           <div className="text-cax-text leading-relaxed">
-            <Suspense fallback={<p>{post.text}</p>}>
+            <Suspense fallback={<><p>{post.text}</p><p><span className="text-cax-accent">Show Translation</span></p></>}>
               <TranslatableText text={post.text} />
             </Suspense>
           </div>
