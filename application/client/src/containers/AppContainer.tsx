@@ -7,7 +7,7 @@ import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/contain
 import { NewPostModalContainer } from "@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer";
 import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
 import { TimelineContainer } from "@web-speed-hackathon-2026/client/src/containers/TimelineContainer";
-import { fetchJSON, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+import { fetchJSON } from "@web-speed-hackathon-2026/client/src/utils/fetch_json";
 
 const CrokContainer = lazy(async () =>
   import("@web-speed-hackathon-2026/client/src/containers/CrokContainer").then((module) => ({
@@ -74,6 +74,7 @@ export const AppContainer = () => {
       });
   }, [setActiveUser, setIsLoadingActiveUser]);
   const handleLogout = useCallback(async () => {
+    const { sendJSON } = await import("@web-speed-hackathon-2026/client/src/utils/send_json_gzip");
     await sendJSON("/api/v1/signout", {});
     setActiveUser(null);
     navigate("/");
