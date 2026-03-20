@@ -20,6 +20,30 @@ interface DmTypingEvent {
 
 const TYPING_INDICATOR_DURATION_MS = 10 * 1000;
 
+function upsertConversationMessage(
+  conversation: Models.DirectMessageConversation,
+  message: Models.DirectMessage,
+): Models.DirectMessageConversation {
+  const index = conversation.messages.findIndex((item) => item.id === message.id);
+  if (index === -1) {
+    return {
+      ...conversation,
+      messages: [...conversation.messages, message],
+    };
+  }
+
+  const messages = [...conversation.messages];
+  messages[index] = {
+    ...messages[index],
+    ...message,
+  };
+
+  return {
+    ...conversation,
+    messages,
+  };
+}
+
 interface Props {
   activeUser: Models.User | null;
   authModalId: string;
@@ -65,15 +89,20 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
     async (params: DirectMessageFormData) => {
       setIsSubmitting(true);
       try {
-        await sendJSON(`/api/v1/dm/${conversationId}/messages`, {
+        const message = await sendJSON<Models.DirectMessage>(`/api/v1/dm/${conversationId}/messages`, {
           body: params.body,
         });
-        await loadConversation();
+        setConversation((currentConversation) => {
+          if (currentConversation == null) {
+            return currentConversation;
+          }
+          return upsertConversationMessage(currentConversation, message);
+        });
       } finally {
         setIsSubmitting(false);
       }
     },
-    [conversationId, loadConversation],
+    [conversationId],
   );
 
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,16 +116,25 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
 
   useWs(`/api/v1/dm/${conversationId}`, (event: DmUpdateEvent | DmTypingEvent) => {
     if (event.type === "dm:conversation:message") {
-      void loadConversation().then(() => {
-        if (event.payload.sender.id !== activeUser?.id) {
-          setIsPeerTyping(false);
-          if (peerTypingTimeoutRef.current !== null) {
-            clearTimeout(peerTypingTimeoutRef.current);
-          }
-          peerTypingTimeoutRef.current = null;
+      setConversation((currentConversation) => {
+        if (currentConversation == null) {
+          return currentConversation;
         }
+        const hasMessage = currentConversation.messages.some((message) => message.id === event.payload.id);
+        if (event.payload.sender.id === activeUser?.id && !hasMessage && isSubmitting) {
+          return currentConversation;
+        }
+        return upsertConversationMessage(currentConversation, event.payload);
       });
-      void sendRead();
+
+      if (event.payload.sender.id !== activeUser?.id) {
+        setIsPeerTyping(false);
+        if (peerTypingTimeoutRef.current !== null) {
+          clearTimeout(peerTypingTimeoutRef.current);
+        }
+        peerTypingTimeoutRef.current = null;
+        void sendRead();
+      }
     } else if (event.type === "dm:conversation:typing") {
       setIsPeerTyping(true);
       if (peerTypingTimeoutRef.current !== null) {
