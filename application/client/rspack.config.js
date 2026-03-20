@@ -134,8 +134,10 @@ const config = {
       chunks: "async",
       minRemainingSize: 0,
       cacheGroups: {
-        defaultVendors: {
+        vendor: {
           test: /[\\/]node_modules[\\/]/,
+          name: "vendor",
+          chunks: "initial",
           reuseExistingChunk: true,
           priority: -10,
         },
