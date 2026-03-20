@@ -44,6 +44,12 @@ const sendTermsHtml = (_req: Request, res: Response) => {
   res.sendFile(TERMS_HTML_PATH);
 };
 
+const sendHomeHtml = (_req: Request, res: Response) => {
+  res.setHeader("Cache-Control", REVALIDATE_CACHE_HEADER);
+  res.sendFile(path.resolve(CLIENT_DIST_PATH, "index.html"));
+};
+
+staticRouter.get("/", sendHomeHtml);
 staticRouter.get("/terms", sendTermsHtml);
 staticRouter.get("/terms/", sendTermsHtml);
 

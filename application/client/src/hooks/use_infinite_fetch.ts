@@ -17,17 +17,71 @@ interface Options {
 
 declare global {
   interface Window {
+    __HOME_TIMELINE_PREFETCH__?: unknown[];
     __PREFETCH_TIMELINE__?: Promise<unknown[]>;
   }
 }
 
-function consumePrefetch<T>(key: string): Promise<T[]> | null {
-  if (key === "__PREFETCH_TIMELINE__" && window.__PREFETCH_TIMELINE__) {
-    const p = window.__PREFETCH_TIMELINE__ as Promise<T[]>;
-    window.__PREFETCH_TIMELINE__ = undefined;
-    return p;
+type PrefetchState<T> = {
+  items: T[] | null;
+  promise: Promise<T[]> | null;
+};
+
+function takePrefetch<T>(key?: string): PrefetchState<T> {
+  if (key !== "__PREFETCH_TIMELINE__") {
+    return { items: null, promise: null };
   }
-  return null;
+
+  if (Array.isArray(window.__HOME_TIMELINE_PREFETCH__)) {
+    const items = window.__HOME_TIMELINE_PREFETCH__ as T[];
+    window.__HOME_TIMELINE_PREFETCH__ = undefined;
+    window.__PREFETCH_TIMELINE__ = undefined;
+    return { items, promise: null };
+  }
+
+  if (window.__PREFETCH_TIMELINE__) {
+    const promise = window.__PREFETCH_TIMELINE__ as Promise<T[]>;
+    window.__PREFETCH_TIMELINE__ = undefined;
+    return { items: null, promise };
+  }
+
+  return { items: null, promise: null };
+}
+
+function createBootstrap<T>(apiPath: string, pageSize: number, prefetchKey?: string) {
+  if (apiPath === "") {
+    return {
+      prefetchedPromise: null as Promise<T[]> | null,
+      result: {
+        data: [] as T[],
+        error: null,
+        isLoading: false,
+      },
+      state: {
+        hasReachedEnd: true,
+        isLoading: false,
+        offset: 0,
+      },
+    };
+  }
+
+  const prefetched = takePrefetch<T>(prefetchKey);
+  const initialItems = prefetched.items ?? [];
+  const shouldLoad = prefetched.promise != null || prefetched.items == null;
+
+  return {
+    prefetchedPromise: prefetched.promise,
+    result: {
+      data: initialItems,
+      error: null,
+      isLoading: shouldLoad,
+    },
+    state: {
+      hasReachedEnd: prefetched.items != null && initialItems.length < pageSize,
+      isLoading: false,
+      offset: initialItems.length,
+    },
+  };
 }
 
 export function useInfiniteFetch<T>(
@@ -35,16 +89,17 @@ export function useInfiniteFetch<T>(
   fetcher: (apiPath: string) => Promise<T[]>,
   options?: Options,
 ): ReturnValues<T> {
-  const internalRef = useRef({ hasReachedEnd: false, isLoading: false, offset: 0 });
   const pageSize = options?.pageSize ?? DEFAULT_LIMIT;
   const serverPagination = options?.serverPagination === true;
   const prefetchKey = options?.prefetchKey;
+  const initialBootstrapRef = useRef(createBootstrap<T>(apiPath, pageSize, prefetchKey));
+  const hasInitializedRef = useRef(false);
+  const pendingPrefetchRef = useRef(initialBootstrapRef.current.prefetchedPromise);
+  const internalRef = useRef(initialBootstrapRef.current.state);
 
-  const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>({
-    data: [],
-    error: null,
-    isLoading: true,
-  });
+  const [result, setResult] = useState<Omit<ReturnValues<T>, "fetchMore">>(
+    initialBootstrapRef.current.result,
+  );
 
   const fetchMore = useCallback(() => {
     const { hasReachedEnd, isLoading, offset } = internalRef.current;
@@ -62,7 +117,8 @@ export function useInfiniteFetch<T>(
       offset,
     };
 
-    const prefetched = offset === 0 && prefetchKey ? consumePrefetch<T>(prefetchKey) : null;
+    const prefetched = offset === 0 ? pendingPrefetchRef.current : null;
+    pendingPrefetchRef.current = null;
     const dataPromise = prefetched ?? (() => {
       const requestPath = serverPagination
         ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${pageSize}&offset=${offset}`
@@ -101,33 +157,28 @@ export function useInfiniteFetch<T>(
   }, [apiPath, fetcher, pageSize, prefetchKey]);
 
   useEffect(() => {
-    if (apiPath === "") {
-      setResult(() => ({
-        data: [],
-        error: null,
-        isLoading: false,
-      }));
-      internalRef.current = {
-        hasReachedEnd: true,
-        isLoading: false,
-        offset: 0,
-      };
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
       return;
     }
 
-    setResult(() => ({
-      data: [],
-      error: null,
-      isLoading: true,
-    }));
-    internalRef.current = {
-      hasReachedEnd: false,
-      isLoading: false,
-      offset: 0,
-    };
+    const bootstrap = createBootstrap<T>(apiPath, pageSize, prefetchKey);
+    pendingPrefetchRef.current = bootstrap.prefetchedPromise;
+    internalRef.current = bootstrap.state;
+    setResult(bootstrap.result);
+  }, [apiPath, pageSize, prefetchKey]);
+
+  useEffect(() => {
+    if (apiPath === "") {
+      return;
+    }
+
+    if (result.data.length > 0 && pendingPrefetchRef.current == null) {
+      return;
+    }
 
     fetchMore();
-  }, [fetchMore]);
+  }, [apiPath, fetchMore, result.data.length]);
 
   return {
     ...result,
