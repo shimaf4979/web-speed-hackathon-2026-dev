@@ -5,6 +5,7 @@ import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Mod
 
 interface Props {
   alt: string;
+  avifSrc?: string;
   fetchPriority?: "auto" | "high" | "low";
   height?: number;
   loading?: "eager" | "lazy";
@@ -17,6 +18,7 @@ interface Props {
  */
 export const CoveredImage = ({
   alt,
+  avifSrc,
   fetchPriority = "auto",
   height = 900,
   loading = "lazy",
@@ -30,16 +32,19 @@ export const CoveredImage = ({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <img
-        alt={alt}
-        className="absolute inset-0 h-full w-full object-cover"
-        decoding="async"
-        fetchPriority={fetchPriority}
-        height={height}
-        loading={loading}
-        src={src}
-        width={width}
-      />
+      <picture className="contents">
+        {avifSrc ? <source srcSet={avifSrc} type="image/avif" /> : null}
+        <img
+          alt={alt}
+          className="absolute inset-0 h-full w-full object-cover"
+          decoding="async"
+          fetchPriority={fetchPriority}
+          height={height}
+          loading={loading}
+          src={src}
+          width={width}
+        />
+      </picture>
 
       <button
         className="border-cax-border bg-cax-surface-raised/90 text-cax-text-muted hover:bg-cax-surface absolute right-1 bottom-1 rounded-full border px-2 py-1 text-center text-xs"

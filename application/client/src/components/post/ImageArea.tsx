@@ -2,7 +2,10 @@ import classNames from "classnames";
 
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { CoveredImage } from "@web-speed-hackathon-2026/client/src/components/foundation/CoveredImage";
-import { getImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
+import {
+  getAvifImagePath,
+  getImagePath,
+} from "@web-speed-hackathon-2026/client/src/utils/get_path";
 
 interface Props {
   images: Models.Image[];
@@ -28,6 +31,7 @@ export const ImageArea = ({ images, prioritizeLcpCandidate = false, variant = "f
             >
               <CoveredImage
                 alt={image.alt}
+                avifSrc={getAvifImagePath(image.id, variant)}
                 fetchPriority={prioritizeLcpCandidate && idx === 0 ? "high" : "auto"}
                 loading={prioritizeLcpCandidate && idx === 0 ? "eager" : "lazy"}
                 src={getImagePath(image.id, variant)}
