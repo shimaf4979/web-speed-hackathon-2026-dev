@@ -6,10 +6,11 @@ import { getImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_pat
 
 interface Props {
   images: Models.Image[];
+  prioritizeLcpCandidate?: boolean;
   variant?: "full" | "thumb";
 }
 
-export const ImageArea = ({ images, variant = "full" }: Props) => {
+export const ImageArea = ({ images, prioritizeLcpCandidate = false, variant = "full" }: Props) => {
   return (
     <AspectRatioBox aspectHeight={9} aspectWidth={16}>
       <div className="border-cax-border grid h-full w-full grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-lg border">
@@ -25,7 +26,12 @@ export const ImageArea = ({ images, variant = "full" }: Props) => {
                 "row-span-2": images.length <= 2 || (images.length === 3 && idx === 0),
               })}
             >
-              <CoveredImage alt={image.alt} src={getImagePath(image.id, variant)} />
+              <CoveredImage
+                alt={image.alt}
+                fetchPriority={prioritizeLcpCandidate && idx === 0 ? "high" : "auto"}
+                loading={prioritizeLcpCandidate && idx === 0 ? "eager" : "lazy"}
+                src={getImagePath(image.id, variant)}
+              />
             </div>
           );
         })}
