@@ -89,9 +89,9 @@ export const DirectMessageListPage = ({ activeUser, newDmModalId }: Props) => {
                   <div className="border-cax-border flex gap-4 border-b px-4 pt-2 pb-4">
                     <AvatarImage
                       alt={peer.profileImage.alt}
-                      className="w-12 shrink-0 self-start rounded-full"
+                      className="h-12 w-12 shrink-0 self-start rounded-full"
                       size={48}
-                      src={getProfileImagePath(peer.profileImage.id)}
+                      src={getProfileImagePath(peer.profileImage.id, "avatar")}
                     />
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-center justify-between">

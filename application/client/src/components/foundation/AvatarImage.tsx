@@ -17,7 +17,7 @@ export const AvatarImage = ({
   return (
     <img
       alt={alt}
-      className={`h-full w-full object-cover${className ? ` ${className}` : ""}`}
+      className={`block object-cover${className ? ` ${className}` : ""}`}
       decoding="async"
       height={size}
       loading={loading}

@@ -23,9 +23,10 @@ export const PostItem = ({ post }: Props) => {
             >
               <AvatarImage
                 alt={post.user.profileImage.alt}
+                className="h-full w-full"
                 loading="eager"
                 size={64}
-                src={getProfileImagePath(post.user.profileImage.id)}
+                src={getProfileImagePath(post.user.profileImage.id, "avatar")}
               />
             </Link>
           </div>
