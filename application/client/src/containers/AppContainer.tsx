@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode, useCallback, useEffect, useId, useState
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 
 import { AppPage } from "@web-speed-hackathon-2026/client/src/components/application/AppPage";
+import { PostPageSkeleton } from "@web-speed-hackathon-2026/client/src/components/post/PostPageSkeleton";
 import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/containers/AuthModalContainer";
 import { NewPostModalContainer } from "@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer";
 import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
@@ -50,8 +51,8 @@ const UserProfileContainer = lazy(async () =>
   ),
 );
 
-const LazyRoute = ({ children }: { children: ReactNode }) => (
-  <Suspense fallback={null}>{children}</Suspense>
+const LazyRoute = ({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) => (
+  <Suspense fallback={fallback}>{children}</Suspense>
 );
 
 export const AppContainer = () => {
@@ -135,7 +136,7 @@ export const AppContainer = () => {
           />
           <Route
             element={
-              <LazyRoute>
+              <LazyRoute fallback={<PostPageSkeleton />}>
                 <PostContainer />
               </LazyRoute>
             }

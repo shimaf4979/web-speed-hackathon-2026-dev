@@ -2,6 +2,7 @@ import { useParams } from "react-router";
 
 import { InfiniteScroll } from "@web-speed-hackathon-2026/client/src/components/foundation/InfiniteScroll";
 import { PostPage } from "@web-speed-hackathon-2026/client/src/components/post/PostPage";
+import { PostPageSkeleton } from "@web-speed-hackathon-2026/client/src/components/post/PostPageSkeleton";
 import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
 import { useDocumentTitle } from "@web-speed-hackathon-2026/client/src/hooks/use_document_title";
 import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
@@ -27,7 +28,7 @@ const PostContainerContent = ({ postId }: { postId: string | undefined }) => {
   useDocumentTitle(title);
 
   if (isLoadingPost) {
-    return null;
+    return <PostPageSkeleton />;
   }
 
   if (post === null) {
