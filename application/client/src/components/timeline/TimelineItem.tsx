@@ -1,13 +1,26 @@
-import { MouseEventHandler, useCallback } from "react";
+import { MouseEventHandler, Suspense, lazy, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { AvatarImage } from "@web-speed-hackathon-2026/client/src/components/foundation/AvatarImage";
 import { ImageArea } from "@web-speed-hackathon-2026/client/src/components/post/ImageArea";
-import { MovieArea } from "@web-speed-hackathon-2026/client/src/components/post/MovieArea";
-import { SoundArea } from "@web-speed-hackathon-2026/client/src/components/post/SoundArea";
-import { TranslatableText } from "@web-speed-hackathon-2026/client/src/components/post/TranslatableText";
 import { formatJapaneseDate, toIsoDateTime } from "@web-speed-hackathon-2026/client/src/utils/date";
 import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
+
+const MovieArea = lazy(async () =>
+  import("@web-speed-hackathon-2026/client/src/components/post/MovieArea").then((module) => ({
+    default: module.MovieArea,
+  })),
+);
+const SoundArea = lazy(async () =>
+  import("@web-speed-hackathon-2026/client/src/components/post/SoundArea").then((module) => ({
+    default: module.SoundArea,
+  })),
+);
+const TranslatableText = lazy(async () =>
+  import("@web-speed-hackathon-2026/client/src/components/post/TranslatableText").then((module) => ({
+    default: module.TranslatableText,
+  })),
+);
 
 const isClickedAnchorOrButton = (target: EventTarget | null, currentTarget: Element): boolean => {
   while (target !== null && target instanceof Element) {
@@ -29,9 +42,10 @@ const isClickedAnchorOrButton = (target: EventTarget | null, currentTarget: Elem
  */
 interface Props {
   post: Models.Post;
+  prioritizeImage?: boolean;
 }
 
-export const TimelineItem = ({ post }: Props) => {
+export const TimelineItem = ({ post, prioritizeImage = false }: Props) => {
   const navigate = useNavigate();
 
   /**
@@ -85,21 +99,27 @@ export const TimelineItem = ({ post }: Props) => {
             </Link>
           </p>
           <div className="text-cax-text leading-relaxed">
-            <TranslatableText text={post.text} />
+            <Suspense fallback={<p>{post.text}</p>}>
+              <TranslatableText text={post.text} />
+            </Suspense>
           </div>
           {post.images?.length > 0 ? (
             <div className="relative mt-2 w-full">
-              <ImageArea images={post.images} variant="thumb" />
+              <ImageArea images={post.images} prioritizeLcpCandidate={prioritizeImage} variant="thumb" />
             </div>
           ) : null}
           {post.movie ? (
             <div className="relative mt-2 w-full">
-              <MovieArea movie={post.movie} />
+              <Suspense fallback={null}>
+                <MovieArea movie={post.movie} />
+              </Suspense>
             </div>
           ) : null}
           {post.sound ? (
             <div className="relative mt-2 w-full">
-              <SoundArea sound={post.sound} />
+              <Suspense fallback={null}>
+                <SoundArea sound={post.sound} />
+              </Suspense>
             </div>
           ) : null}
         </div>
