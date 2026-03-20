@@ -134,7 +134,6 @@ const config = {
   },
   optimization: {
     minimize: true,
-    splitChunks: false,
     concatenateModules: true,
     usedExports: true,
     providedExports: true,
