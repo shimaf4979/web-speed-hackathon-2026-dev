@@ -7,9 +7,28 @@ import {
   sanitizeSearchText,
 } from "@web-speed-hackathon-2026/client/src/search/services";
 import { validate } from "@web-speed-hackathon-2026/client/src/search/validation";
-import { analyzeSentiment } from "@web-speed-hackathon-2026/client/src/utils/negaposi_analyzer";
 
 import { Button } from "../foundation/Button";
+
+let analyzeSentimentModulePromise:
+  | Promise<typeof import("@web-speed-hackathon-2026/client/src/utils/negaposi_analyzer")>
+  | null = null;
+
+async function loadAnalyzeSentiment() {
+  analyzeSentimentModulePromise ??= import(
+    "@web-speed-hackathon-2026/client/src/utils/negaposi_analyzer"
+  );
+  return analyzeSentimentModulePromise;
+}
+
+type SentimentStatus = "idle" | "loading" | "done";
+type IdleWindow = Window & {
+  requestIdleCallback?: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions,
+  ) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
 
 interface Props {
   query: string;
@@ -21,6 +40,7 @@ export const SearchPage = ({ query, results }: Props) => {
   const [searchText, setSearchText] = useState(query);
   const [touched, setTouched] = useState(false);
   const [isNegative, setIsNegative] = useState(false);
+  const [sentimentStatus, setSentimentStatus] = useState<SentimentStatus>("idle");
   const inputId = useId();
 
   useEffect(() => {
@@ -36,24 +56,49 @@ export const SearchPage = ({ query, results }: Props) => {
   useEffect(() => {
     if (!parsed.keywords) {
       setIsNegative(false);
+      setSentimentStatus("idle");
       return;
     }
 
     let isMounted = true;
-    analyzeSentiment(parsed.keywords)
-      .then((result) => {
-        if (isMounted) {
-          setIsNegative(result.label === "negative");
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setIsNegative(false);
-        }
-      });
+    setSentimentStatus("loading");
+
+    const runSentimentAnalysis = () => {
+      void loadAnalyzeSentiment()
+        .then(({ analyzeSentiment }) => analyzeSentiment(parsed.keywords))
+        .then((result) => {
+          if (isMounted) {
+            setIsNegative(result.label === "negative");
+            setSentimentStatus("done");
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setIsNegative(false);
+            setSentimentStatus("done");
+          }
+        });
+    };
+
+    let timerId: number | null = null;
+    let idleCallbackId: number | null = null;
+
+    // 検索結果の描画を先に進めるため、低優先度で辞書ロードを開始する。
+    const idleWindow = window as IdleWindow;
+    if (idleWindow.requestIdleCallback) {
+      idleCallbackId = idleWindow.requestIdleCallback(runSentimentAnalysis, { timeout: 1500 });
+    } else {
+      timerId = window.setTimeout(runSentimentAnalysis, 600);
+    }
 
     return () => {
       isMounted = false;
+      if (timerId !== null) {
+        window.clearTimeout(timerId);
+      }
+      if (idleCallbackId !== null && idleWindow.cancelIdleCallback) {
+        idleWindow.cancelIdleCallback(idleCallbackId);
+      }
     };
   }, [parsed.keywords]);
 
@@ -132,6 +177,9 @@ export const SearchPage = ({ query, results }: Props) => {
             </div>
           </div>
         </article>
+      )}
+      {sentimentStatus === "loading" && !isNegative && (
+        <div className="text-cax-text-muted px-4 text-xs">感情分析を読み込み中...</div>
       )}
 
       {query && results.length === 0 ? (
