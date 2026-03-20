@@ -10,13 +10,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const applicationDir = path.resolve(__dirname, "..");
 const publicDir = path.resolve(applicationDir, "public");
 const reportsDir = path.resolve(applicationDir, "reports");
-const manifestPath = path.resolve(applicationDir, "client/src/utils/compressed_public_assets.ts");
-
 const apply = process.argv.includes("--apply");
-const imageExtensions = new Set([".jpg", ".jpeg", ".png"]);
-const imagesDir = path.resolve(publicDir, "images");
-const profileImagesDir = path.resolve(imagesDir, "profiles");
-const moviesDir = path.resolve(publicDir, "movies");
+const emitAvif = process.argv.includes("--emit-avif");
+const avifThresholdBytes = 2 * 1024 * 1024;
 
 async function walk(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -30,10 +26,6 @@ async function walk(dir) {
     }),
   );
   return nested.flat();
-}
-
-function getId(filePath) {
-  return path.basename(filePath, path.extname(filePath));
 }
 
 function runFfmpeg(args) {
@@ -51,39 +43,51 @@ function runFfmpeg(args) {
 }
 
 async function convertImage(filePath) {
-  const sourceBuffer = await fs.readFile(filePath);
-  const sourceSize = sourceBuffer.byteLength;
-  const pipeline = sharp(sourceBuffer, { animated: false, limitInputPixels: false }).rotate();
+  const inputBuffer = await fs.readFile(filePath);
+  const sourceSize = inputBuffer.byteLength;
+  const pipeline = sharp(inputBuffer, { animated: false, limitInputPixels: false }).rotate();
   const sourceMetadata = await pipeline.metadata();
-  const outputBuffer = await pipeline
+  const webpBuffer = await pipeline
     .webp({
       quality: 86,
       effort: 4,
       smartSubsample: true,
     })
     .toBuffer();
-  const outputMetadata = await sharp(outputBuffer).metadata();
-
+  const outputMetadata = await sharp(webpBuffer).metadata();
   if (
-    sourceMetadata.width !== outputMetadata.width ||
-    sourceMetadata.height !== outputMetadata.height ||
-    outputBuffer.byteLength >= sourceSize
+    outputMetadata.width !== sourceMetadata.width ||
+    outputMetadata.height !== sourceMetadata.height
   ) {
-    return null;
+    throw new Error(`Image dimensions changed unexpectedly: ${filePath}`);
+  }
+
+  let avifBuffer;
+  if (emitAvif && sourceSize >= avifThresholdBytes) {
+    avifBuffer = await sharp(inputBuffer, { animated: false, limitInputPixels: false })
+      .rotate()
+      .avif({
+        quality: 50,
+        effort: 6,
+      })
+      .toBuffer();
   }
 
   return {
-    afterBytes: outputBuffer.byteLength,
+    afterBytes: webpBuffer.byteLength,
+    avifAfterBytes: avifBuffer?.byteLength,
     beforeBytes: sourceSize,
-    outputBuffer,
+    outputBuffer: webpBuffer,
     outputPath: filePath.replace(/\.(?:jpe?g|png)$/iu, ".webp"),
+    avifBuffer,
+    avifPath: filePath.replace(/\.(?:jpe?g|png)$/iu, ".avif"),
   };
 }
 
 async function convertMovie(filePath) {
   const sourceStats = await fs.stat(filePath);
+  const tempPath = filePath.replace(/\.gif$/iu, ".tmp.webm");
   const outputPath = filePath.replace(/\.gif$/iu, ".webm");
-  const tempPath = `${outputPath}.tmp`;
   await fs.rm(tempPath, { force: true });
   await runFfmpeg([
     "-y",
@@ -103,10 +107,6 @@ async function convertMovie(filePath) {
     tempPath,
   ]);
   const outputStats = await fs.stat(tempPath);
-  if (outputStats.size >= sourceStats.size) {
-    await fs.rm(tempPath, { force: true });
-    return null;
-  }
 
   return {
     afterBytes: outputStats.size,
@@ -116,78 +116,47 @@ async function convertMovie(filePath) {
   };
 }
 
-function formatSet(name, values) {
-  return `export const ${name} = new Set<string>(${JSON.stringify([...values].sort(), null, 2)});\n`;
-}
-
-async function writeManifest({ imageIds, movieIds, profileImageIds }) {
-  const content = [
-    formatSet("compressedImageIds", imageIds),
-    formatSet("compressedMovieIds", movieIds),
-    formatSet("compressedProfileImageIds", profileImageIds),
-  ].join("\n");
-  await fs.writeFile(manifestPath, content);
-}
-
 async function main() {
   await fs.mkdir(reportsDir, { recursive: true });
 
-  const imageFiles = (await walk(imagesDir)).filter((filePath) =>
-    imageExtensions.has(path.extname(filePath).toLowerCase()),
+  const imageFiles = (await walk(path.resolve(publicDir, "images"))).filter((filePath) =>
+    /\.(?:jpe?g|png)$/iu.test(filePath),
   );
-  const movieFiles = (await walk(moviesDir)).filter(
-    (filePath) => path.extname(filePath).toLowerCase() === ".gif",
+  const movieFiles = (await walk(path.resolve(publicDir, "movies"))).filter((filePath) =>
+    /\.gif$/iu.test(filePath),
   );
 
-  const imageIds = new Set();
-  const movieIds = new Set();
-  const profileImageIds = new Set();
   const results = [];
 
   for (const imageFile of imageFiles) {
     const result = await convertImage(imageFile);
-    if (result == null) {
-      continue;
-    }
-
-    const isProfileImage = imageFile.startsWith(`${profileImagesDir}${path.sep}`);
-    const id = getId(imageFile);
-    if (isProfileImage) {
-      profileImageIds.add(id);
-    } else {
-      imageIds.add(id);
-    }
-
     results.push({
-      afterBytes: result.afterBytes,
-      beforeBytes: result.beforeBytes,
-      id,
-      kind: isProfileImage ? "profile-image" : "image",
-      outputPath: path.relative(applicationDir, result.outputPath),
+      kind: "image",
       sourcePath: path.relative(applicationDir, imageFile),
+      outputPath: path.relative(applicationDir, result.outputPath),
+      beforeBytes: result.beforeBytes,
+      afterBytes: result.afterBytes,
+      avifOutputPath: emitAvif && result.avifBuffer ? path.relative(applicationDir, result.avifPath) : null,
+      avifAfterBytes: result.avifAfterBytes ?? null,
     });
 
     if (apply) {
       await fs.writeFile(result.outputPath, result.outputBuffer);
+      if (emitAvif && result.avifBuffer != null) {
+        await fs.writeFile(result.avifPath, result.avifBuffer);
+      }
       await fs.rm(imageFile);
     }
   }
 
   for (const movieFile of movieFiles) {
     const result = await convertMovie(movieFile);
-    if (result == null) {
-      continue;
-    }
-
-    const id = getId(movieFile);
-    movieIds.add(id);
     results.push({
-      afterBytes: result.afterBytes,
-      beforeBytes: result.beforeBytes,
-      id,
       kind: "movie",
-      outputPath: path.relative(applicationDir, result.outputPath),
       sourcePath: path.relative(applicationDir, movieFile),
+      outputPath: path.relative(applicationDir, result.outputPath),
+      beforeBytes: result.beforeBytes,
+      afterBytes: result.afterBytes,
     });
 
     if (apply) {
@@ -197,8 +166,6 @@ async function main() {
       await fs.rm(result.tempPath, { force: true });
     }
   }
-
-  await writeManifest({ imageIds, movieIds, profileImageIds });
 
   const summary = results.reduce(
     (acc, result) => {
@@ -211,11 +178,12 @@ async function main() {
 
   const report = {
     apply,
+    emitAvif,
     generatedAt: new Date().toISOString(),
     summary: {
-      afterBytes: summary.afterBytes,
-      beforeBytes: summary.beforeBytes,
       convertedCount: results.length,
+      beforeBytes: summary.beforeBytes,
+      afterBytes: summary.afterBytes,
       savedBytes: summary.beforeBytes - summary.afterBytes,
     },
     results: results.sort((left, right) => right.beforeBytes - left.beforeBytes),
