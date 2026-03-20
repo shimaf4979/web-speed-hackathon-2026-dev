@@ -43,8 +43,12 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
     const element = ref.current;
 
     const handleToggle = () => {
-      // モーダル開閉時にkeyを更新することでフォームの状態をリセットする
-      setResetKey((key) => key + 1);
+      // モーダルが閉じたときだけkeyを更新してフォームの状態をリセットする
+      // 開くときにリセットすると、描画完了前にユーザー入力が始まった場合に
+      // リマウントで入力値が失われるレースコンディションが発生する
+      if (!element.open) {
+        setResetKey((key) => key + 1);
+      }
     };
     element.addEventListener("toggle", handleToggle);
     return () => {
