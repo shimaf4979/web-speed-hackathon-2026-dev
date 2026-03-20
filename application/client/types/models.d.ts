@@ -34,6 +34,7 @@ declare namespace Models {
     artist: string;
     id: string;
     title: string;
+    waveformPeaks: Array<number>;
   }
 
   interface Movie {

@@ -6,6 +6,7 @@ import httpErrors from "http-errors";
 import { v4 as uuidv4 } from "uuid";
 
 import { UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/paths";
+import { calculateSoundWaveformPeaks } from "@web-speed-hackathon-2026/server/src/utils/calculate_sound_waveform_peaks";
 import { convertSoundToMp3 } from "@web-speed-hackathon-2026/server/src/utils/convert_media";
 import { extractMetadataFromSound } from "@web-speed-hackathon-2026/server/src/utils/extract_metadata_from_sound";
 
@@ -29,6 +30,7 @@ soundRouter.post("/sounds", async (req, res) => {
   } catch {
     throw new httpErrors.BadRequest("Invalid audio file");
   }
+  const waveformPeaks = await calculateSoundWaveformPeaks(soundBuffer);
 
   const soundId = uuidv4();
 
@@ -36,5 +38,5 @@ soundRouter.post("/sounds", async (req, res) => {
   await fs.mkdir(path.resolve(UPLOAD_PATH, "sounds"), { recursive: true });
   await fs.writeFile(filePath, soundBuffer);
 
-  return res.status(200).type("application/json").send({ artist, id: soundId, title });
+  return res.status(200).type("application/json").send({ artist, id: soundId, title, waveformPeaks });
 });
