@@ -62,7 +62,7 @@ export function initPost(sequelize: Sequelize) {
             through: { attributes: [] },
           },
           { association: "movie", attributes: ["id"] },
-          { association: "sound", attributes: ["artist", "id", "title"] },
+          { association: "sound", attributes: ["artist", "id", "title", "waveformPeaks"] },
         ],
         order: [
           ["id", "DESC"],
