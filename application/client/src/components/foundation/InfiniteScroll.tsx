@@ -38,7 +38,7 @@ export const InfiniteScroll = ({ children, fetchMore, items }: Props) => {
   return (
     <>
       {children}
-      <div aria-hidden ref={sentinelRef} style={{ blockSize: "1px", inlineSize: "100%" }} />
+      <div aria-hidden ref={sentinelRef} className="h-px w-full" />
     </>
   );
 };
