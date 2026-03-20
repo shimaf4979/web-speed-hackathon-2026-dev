@@ -13,8 +13,10 @@ const avifModulePath = path.resolve(applicationDir, "client/src/utils/avif_image
 const args = new Set(process.argv.slice(2));
 const apply = args.has("--apply");
 
-const MIN_SOURCE_BYTES = 4 * 1024 * 1024;
-const MIN_SAVED_BYTES = 8 * 1024;
+const FULL_MIN_SOURCE_BYTES = 2 * 1024 * 1024;
+const FULL_MIN_SAVED_BYTES = 8 * 1024;
+const THUMB_MIN_SOURCE_BYTES = 24 * 1024;
+const THUMB_MIN_SAVED_BYTES = 2 * 1024;
 
 async function walk(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -32,32 +34,53 @@ async function walk(dir) {
 
 function isTargetImage(filePath) {
   const relativePath = path.relative(publicImageDir, filePath).replaceAll(path.sep, "/");
-  return (
-    relativePath.startsWith("profiles/") === false &&
-    relativePath.endsWith(".thumb.webp") === false &&
-    relativePath.endsWith(".webp")
-  );
+  return relativePath.startsWith("profiles/") === false && relativePath.endsWith(".webp");
 }
 
 function getImageId(filePath) {
-  return path.basename(filePath, ".webp");
+  return path.basename(filePath).replace(/\.thumb\.webp$|\.webp$/iu, "");
+}
+
+function getVariant(filePath) {
+  return filePath.endsWith(".thumb.webp") ? "thumb" : "full";
+}
+
+function getThresholds(variant) {
+  if (variant === "thumb") {
+    return {
+      minSavedBytes: THUMB_MIN_SAVED_BYTES,
+      minSourceBytes: THUMB_MIN_SOURCE_BYTES,
+      options: {
+        chromaSubsampling: "4:2:0",
+        effort: 4,
+        quality: 50,
+      },
+    };
+  }
+
+  return {
+    minSavedBytes: FULL_MIN_SAVED_BYTES,
+    minSourceBytes: FULL_MIN_SOURCE_BYTES,
+    options: {
+      chromaSubsampling: "4:2:0",
+      effort: 4,
+      quality: 48,
+    },
+  };
 }
 
 async function convertToAvif(filePath) {
   const sourceBuffer = await fs.readFile(filePath);
-  if (sourceBuffer.byteLength < MIN_SOURCE_BYTES) {
+  const variant = getVariant(filePath);
+  const thresholds = getThresholds(variant);
+
+  if (sourceBuffer.byteLength < thresholds.minSourceBytes) {
     return null;
   }
 
   const sourcePipeline = sharp(sourceBuffer, { animated: false, limitInputPixels: false }).rotate();
   const sourceMetadata = await sourcePipeline.metadata();
-  const outputBuffer = await sourcePipeline
-    .avif({
-      chromaSubsampling: "4:2:0",
-      effort: 4,
-      quality: 50,
-    })
-    .toBuffer();
+  const outputBuffer = await sourcePipeline.avif(thresholds.options).toBuffer();
   const outputMetadata = await sharp(outputBuffer).metadata();
 
   if (
@@ -68,7 +91,7 @@ async function convertToAvif(filePath) {
   }
 
   const savedBytes = sourceBuffer.byteLength - outputBuffer.byteLength;
-  if (savedBytes < MIN_SAVED_BYTES) {
+  if (savedBytes < thresholds.minSavedBytes) {
     return null;
   }
 
@@ -80,14 +103,20 @@ async function convertToAvif(filePath) {
     outputPath: filePath.replace(/\.webp$/iu, ".avif"),
     savedBytes,
     sourcePath: filePath,
+    variant,
   };
 }
 
-async function writeAvifModule(imageIds) {
-  const sortedIds = [...imageIds].sort();
+async function writeAvifModule(imageIdsByVariant) {
+  const sortedFullIds = [...imageIdsByVariant.full].sort();
+  const sortedThumbIds = [...imageIdsByVariant.thumb].sort();
   const lines = [
     "export const avifImageIds = new Set<string>([",
-    ...sortedIds.map((imageId) => `  ${JSON.stringify(imageId)},`),
+    ...sortedFullIds.map((imageId) => `  ${JSON.stringify(imageId)},`),
+    "]);",
+    "",
+    "export const avifThumbImageIds = new Set<string>([",
+    ...sortedThumbIds.map((imageId) => `  ${JSON.stringify(imageId)},`),
     "]);",
     "",
   ];
@@ -99,7 +128,10 @@ async function main() {
 
   const imageFiles = (await walk(publicImageDir)).filter(isTargetImage);
   const results = [];
-  const generatedImageIds = [];
+  const generatedImageIds = {
+    full: new Set(),
+    thumb: new Set(),
+  };
 
   for (const imageFile of imageFiles) {
     const result = await convertToAvif(imageFile);
@@ -107,7 +139,7 @@ async function main() {
       continue;
     }
 
-    generatedImageIds.push(result.imageId);
+    generatedImageIds[result.variant].add(result.imageId);
     results.push({
       sourcePath: path.relative(applicationDir, result.sourcePath),
       outputPath: path.relative(applicationDir, result.outputPath),
@@ -115,6 +147,7 @@ async function main() {
       beforeBytes: result.beforeBytes,
       afterBytes: result.afterBytes,
       savedBytes: result.savedBytes,
+      variant: result.variant,
     });
 
     if (apply) {
@@ -131,9 +164,21 @@ async function main() {
       accumulator.beforeBytes += result.beforeBytes;
       accumulator.afterBytes += result.afterBytes;
       accumulator.savedBytes += result.savedBytes;
+      accumulator.byVariant[result.variant].beforeBytes += result.beforeBytes;
+      accumulator.byVariant[result.variant].afterBytes += result.afterBytes;
+      accumulator.byVariant[result.variant].savedBytes += result.savedBytes;
+      accumulator.byVariant[result.variant].generatedCount += 1;
       return accumulator;
     },
-    { afterBytes: 0, beforeBytes: 0, savedBytes: 0 },
+    {
+      afterBytes: 0,
+      beforeBytes: 0,
+      byVariant: {
+        full: { afterBytes: 0, beforeBytes: 0, generatedCount: 0, savedBytes: 0 },
+        thumb: { afterBytes: 0, beforeBytes: 0, generatedCount: 0, savedBytes: 0 },
+      },
+      savedBytes: 0,
+    },
   );
 
   const report = {
@@ -144,8 +189,14 @@ async function main() {
       generatedCount: results.length,
     },
     thresholds: {
-      minSavedBytes: MIN_SAVED_BYTES,
-      minSourceBytes: MIN_SOURCE_BYTES,
+      full: {
+        minSavedBytes: FULL_MIN_SAVED_BYTES,
+        minSourceBytes: FULL_MIN_SOURCE_BYTES,
+      },
+      thumb: {
+        minSavedBytes: THUMB_MIN_SAVED_BYTES,
+        minSourceBytes: THUMB_MIN_SOURCE_BYTES,
+      },
     },
     results: results.sort((left, right) => right.savedBytes - left.savedBytes),
   };
