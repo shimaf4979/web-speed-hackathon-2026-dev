@@ -63,12 +63,24 @@ export const AppContainer = () => {
 
   const [activeUser, setActiveUser] = useState<Models.User | null>(null);
   useEffect(() => {
-    void fetchJSON<Models.User>("/api/v1/me")
-      .then((user) => {
-        setActiveUser(user);
-      })
-      .catch(() => {});
-  }, [setActiveUser]);
+    const fetchActiveUser = () => {
+      void fetchJSON<Models.User>("/api/v1/me")
+        .then((user) => {
+          setActiveUser(user);
+        })
+        .catch(() => {});
+    };
+
+    if (pathname !== "/") {
+      fetchActiveUser();
+      return;
+    }
+
+    const timeoutId = window.setTimeout(fetchActiveUser, 250);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [pathname]);
   const handleLogout = useCallback(async () => {
     const { sendJSON } = await import("@web-speed-hackathon-2026/client/src/utils/send_json_gzip");
     await sendJSON("/api/v1/signout", {});

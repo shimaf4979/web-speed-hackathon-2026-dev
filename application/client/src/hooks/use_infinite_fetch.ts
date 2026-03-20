@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const LIMIT = 30;
+const DEFAULT_LIMIT = 30;
 
 interface ReturnValues<T> {
   data: Array<T>;
@@ -10,6 +10,7 @@ interface ReturnValues<T> {
 }
 
 interface Options {
+  pageSize?: number;
   serverPagination?: boolean;
   prefetchKey?: string;
 }
@@ -35,6 +36,7 @@ export function useInfiniteFetch<T>(
   options?: Options,
 ): ReturnValues<T> {
   const internalRef = useRef({ hasReachedEnd: false, isLoading: false, offset: 0 });
+  const pageSize = options?.pageSize ?? DEFAULT_LIMIT;
   const serverPagination = options?.serverPagination === true;
   const prefetchKey = options?.prefetchKey;
 
@@ -63,14 +65,14 @@ export function useInfiniteFetch<T>(
     const prefetched = offset === 0 && prefetchKey ? consumePrefetch<T>(prefetchKey) : null;
     const dataPromise = prefetched ?? (() => {
       const requestPath = serverPagination
-        ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${LIMIT}&offset=${offset}`
+        ? `${apiPath}${apiPath.includes("?") ? "&" : "?"}limit=${pageSize}&offset=${offset}`
         : apiPath;
       return fetcher(requestPath);
     })();
 
     void dataPromise.then(
       (items) => {
-        const nextItems = serverPagination ? items : items.slice(offset, offset + LIMIT);
+        const nextItems = serverPagination ? items : items.slice(offset, offset + pageSize);
         setResult((cur) => ({
           ...cur,
           data: [...cur.data, ...nextItems],
@@ -78,7 +80,7 @@ export function useInfiniteFetch<T>(
           isLoading: false,
         }));
         internalRef.current = {
-          hasReachedEnd: nextItems.length < LIMIT,
+          hasReachedEnd: nextItems.length < pageSize,
           isLoading: false,
           offset: offset + nextItems.length,
         };
@@ -96,7 +98,7 @@ export function useInfiniteFetch<T>(
         };
       },
     );
-  }, [apiPath, fetcher, prefetchKey]);
+  }, [apiPath, fetcher, pageSize, prefetchKey]);
 
   useEffect(() => {
     if (apiPath === "") {
