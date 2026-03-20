@@ -36,8 +36,27 @@ export const SoundPlayer = ({ sound }: Props) => {
     });
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry!.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const [soundData, setSoundData] = useState<ArrayBuffer | null>(null);
   useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
     fetch(soundUrl)
       .then((res) => res.arrayBuffer())
@@ -45,10 +64,10 @@ export const SoundPlayer = ({ sound }: Props) => {
         if (!cancelled) setSoundData(buf);
       });
     return () => { cancelled = true; };
-  }, [soundUrl]);
+  }, [soundUrl, isVisible]);
 
   return (
-    <div className="bg-cax-surface-subtle flex h-full w-full items-center justify-center">
+    <div ref={containerRef} className="bg-cax-surface-subtle flex h-full w-full items-center justify-center">
       <audio ref={audioRef} loop={true} onTimeUpdate={handleTimeUpdate} src={soundUrl} preload="metadata" />
       <div className="p-2">
         <button
