@@ -76,8 +76,13 @@ export const DirectMessageContainer = ({ activeUser, authModalId }: Props) => {
     [conversationId, loadConversation],
   );
 
-  const handleTyping = useCallback(async () => {
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTyping = useCallback(() => {
+    if (typingTimerRef.current !== null) return;
     void sendJSON(`/api/v1/dm/${conversationId}/typing`, {});
+    typingTimerRef.current = setTimeout(() => {
+      typingTimerRef.current = null;
+    }, 2000);
   }, [conversationId]);
 
   useWs(`/api/v1/dm/${conversationId}`, (event: DmUpdateEvent | DmTypingEvent) => {
