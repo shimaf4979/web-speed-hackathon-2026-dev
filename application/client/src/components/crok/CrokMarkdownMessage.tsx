@@ -15,7 +15,6 @@ export const CrokMarkdownMessage = ({ content }: Props) => {
   return (
     <Markdown
       components={{ pre: CodeBlock }}
-      key={content}
       rehypePlugins={[rehypeKatex]}
       remarkPlugins={[remarkMath, remarkGfm]}
     >
