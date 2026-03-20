@@ -1,7 +1,14 @@
 import { FontAwesomeIcon } from "../foundation/FontAwesomeIcon";
+import { CrokLogo } from "../foundation/CrokLogo";
+
+interface ActiveUser {
+  username: string;
+}
 
 interface Props {
   authModalId: string;
+  activeUser?: ActiveUser | null;
+  onLogout?: () => void;
 }
 
 const itemClassName =
@@ -9,7 +16,7 @@ const itemClassName =
 
 const labelClassName = "hidden sm:inline sm:text-sm lg:text-xl lg:font-bold";
 
-export const TermsNavigation = ({ authModalId }: Props) => {
+export const TermsNavigation = ({ activeUser = null, authModalId, onLogout }: Props) => {
   return (
     <nav className="border-cax-border bg-cax-surface fixed right-0 bottom-0 left-0 z-10 h-12 border-t lg:relative lg:h-full lg:w-48 lg:border-t-0 lg:border-r">
       <div className="relative grid grid-flow-col items-center justify-evenly lg:fixed lg:flex lg:h-full lg:w-48 lg:flex-col lg:justify-between lg:p-2">
@@ -30,19 +37,51 @@ export const TermsNavigation = ({ authModalId }: Props) => {
               <span className={labelClassName}>検索</span>
             </a>
           </li>
-          <li>
-            <button
-              className={itemClassName}
-              type="button"
-              command="show-modal"
-              commandfor={authModalId}
-            >
-              <span className="relative text-xl lg:pr-2 lg:text-3xl">
-                <FontAwesomeIcon iconType="sign-in-alt" styleType="solid" />
-              </span>
-              <span className={labelClassName}>サインイン</span>
-            </button>
-          </li>
+          {activeUser !== null ? (
+            <li>
+              <a className={itemClassName} href="/dm">
+                <span className="relative text-xl lg:pr-2 lg:text-3xl">
+                  <FontAwesomeIcon iconType="envelope" styleType="solid" />
+                </span>
+                <span className={labelClassName}>DM</span>
+              </a>
+            </li>
+          ) : null}
+          {activeUser !== null ? (
+            <li>
+              <a className={itemClassName} href={`/users/${activeUser.username}`}>
+                <span className="relative text-xl lg:pr-2 lg:text-3xl">
+                  <FontAwesomeIcon iconType="user" styleType="solid" />
+                </span>
+                <span className={labelClassName}>マイページ</span>
+              </a>
+            </li>
+          ) : null}
+          {activeUser !== null ? (
+            <li>
+              <a className={itemClassName} href="/crok">
+                <span className="relative text-xl lg:pr-2 lg:text-3xl">
+                  <CrokLogo className="h-[30px] w-[30px]" />
+                </span>
+                <span className={labelClassName}>Crok</span>
+              </a>
+            </li>
+          ) : null}
+          {activeUser === null ? (
+            <li>
+              <button
+                className={itemClassName}
+                type="button"
+                command="show-modal"
+                commandfor={authModalId}
+              >
+                <span className="relative text-xl lg:pr-2 lg:text-3xl">
+                  <FontAwesomeIcon iconType="sign-in-alt" styleType="solid" />
+                </span>
+                <span className={labelClassName}>サインイン</span>
+              </button>
+            </li>
+          ) : null}
           <li>
             <a className={`${itemClassName} text-cax-brand`} href="/terms">
               <span className="relative text-xl lg:pr-2 lg:text-3xl">
@@ -51,6 +90,16 @@ export const TermsNavigation = ({ authModalId }: Props) => {
               <span className={labelClassName}>利用規約</span>
             </a>
           </li>
+          {activeUser !== null ? (
+            <li>
+              <button className={itemClassName} onClick={onLogout} type="button">
+                <span className="relative text-xl lg:pr-2 lg:text-3xl">
+                  <FontAwesomeIcon iconType="sign-in-alt" styleType="solid" />
+                </span>
+                <span className={labelClassName}>ログアウト</span>
+              </button>
+            </li>
+          ) : null}
         </ul>
       </div>
     </nav>

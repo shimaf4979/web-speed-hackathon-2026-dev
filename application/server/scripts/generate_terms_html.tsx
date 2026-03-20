@@ -26,12 +26,22 @@ function resolveScriptPaths() {
     .catch(() => ["/scripts/vendor.js", "/scripts/main.js"]);
 }
 
+async function resolveStylePaths() {
+  const termsStylePath = path.resolve(distRoot, "styles/terms.css");
+
+  return fs
+    .access(termsStylePath)
+    .then(() => ["/styles/terms.css"])
+    .catch(() => ["/styles/main.css"]);
+}
+
 async function main() {
-  const scripts = await resolveScriptPaths();
+  const [scripts, styles] = await Promise.all([resolveScriptPaths(), resolveStylePaths()]);
   const appMarkup = renderToStaticMarkup(
     createElement(TermsStandaloneShell, { authModalId: TERMS_AUTH_MODAL_ID }),
   );
   const scriptTags = scripts.map((scriptPath) => `<script defer src="${scriptPath}"></script>`).join("");
+  const styleTags = styles.map((stylePath) => `<link rel="stylesheet" href="${stylePath}" />`).join("");
 
   const document = [
     "<!doctype html>",
@@ -40,7 +50,7 @@ async function main() {
     '<meta charset="UTF-8" />',
     '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
     "<title>利用規約 - CaX</title>",
-    '<link rel="stylesheet" href="/styles/main.css" />',
+    styleTags,
     scriptTags,
     "</head>",
     '<body class="bg-cax-canvas text-cax-text">',
