@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SubmissionError } from "redux-form";
 
 import { AuthFormData } from "@web-speed-hackathon-2026/client/src/auth/types";
 import { AuthModalPage } from "@web-speed-hackathon-2026/client/src/components/auth_modal/AuthModalPage";
@@ -43,9 +42,6 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
     const element = ref.current;
 
     const handleToggle = () => {
-      // モーダルが閉じたときだけkeyを更新してフォームの状態をリセットする
-      // 開くときにリセットすると、描画完了前にユーザー入力が始まった場合に
-      // リマウントで入力値が失われるレースコンディションが発生する
       if (!element.open) {
         setResetKey((key) => key + 1);
       }
@@ -72,10 +68,7 @@ export const AuthModalContainer = ({ id, onUpdateActiveUser }: Props) => {
         }
         handleRequestCloseModal();
       } catch (err: unknown) {
-        const error = getErrorCode(err as JQuery.jqXHR<unknown>, values.type);
-        throw new SubmissionError({
-          _error: error,
-        });
+        throw getErrorCode(err as JQuery.jqXHR<unknown>, values.type);
       }
     },
     [handleRequestCloseModal, onUpdateActiveUser],
