@@ -3,10 +3,16 @@ import { BrowserRouter } from "react-router";
 
 import { AppContainer } from "@web-speed-hackathon-2026/client/src/containers/AppContainer";
 
-window.addEventListener("load", () => {
+const mount = () => {
   createRoot(document.getElementById("app")!).render(
     <BrowserRouter>
       <AppContainer />
     </BrowserRouter>,
   );
-});
+};
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", mount, { once: true });
+} else {
+  mount();
+}
