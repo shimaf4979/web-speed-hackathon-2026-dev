@@ -58,5 +58,10 @@ postRouter.post("/posts", async (req, res) => {
     },
   );
 
-  return res.status(200).type("application/json").send(post);
+  const createdPost = await Post.findByPk(post.id);
+  if (createdPost === null) {
+    throw new httpErrors.InternalServerError("Created post could not be reloaded");
+  }
+
+  return res.status(200).type("application/json").send(createdPost);
 });

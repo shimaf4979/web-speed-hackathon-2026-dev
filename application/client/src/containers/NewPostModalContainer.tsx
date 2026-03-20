@@ -1,4 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router";
 
 import { Modal } from "@web-speed-hackathon-2026/client/src/components/modal/Modal";
@@ -30,6 +39,12 @@ async function sendNewPost({ images, movie, sound, text }: SubmitParams): Promis
   };
 
   return sendJSON("/api/v1/posts", payload);
+}
+
+function prefetchPost(post: Models.Post) {
+  const apiPath = `/api/v1/posts/${post.id}`;
+  window.__PREFETCH_JSON__ = window.__PREFETCH_JSON__ ?? {};
+  window.__PREFETCH_JSON__[apiPath] = Promise.resolve(post);
 }
 
 interface Props {
@@ -74,8 +89,11 @@ export const NewPostModalContainer = ({ id }: Props) => {
       try {
         setIsLoading(true);
         const post = await sendNewPost(params);
+        prefetchPost(post);
         ref.current?.close();
-        navigate(`/posts/${post.id}`);
+        startTransition(() => {
+          navigate(`/posts/${post.id}`);
+        });
       } catch {
         setHasError(true);
       } finally {
