@@ -51,11 +51,18 @@ export const PausableMovie = ({ src }: Props) => {
 
   return (
     <AspectRatioBox aspectHeight={1} aspectWidth={1}>
-      <button
+      <div
         aria-label="動画プレイヤー"
-        className="group relative block h-full w-full"
+        className="group relative block h-full w-full cursor-pointer"
         onClick={handleClick}
-        type="button"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         <video
           ref={videoRef}
@@ -77,7 +84,7 @@ export const PausableMovie = ({ src }: Props) => {
         >
           <FontAwesomeIcon iconType={isPlaying ? "pause" : "play"} styleType="solid" />
         </div>
-      </button>
+      </div>
     </AspectRatioBox>
   );
 };
