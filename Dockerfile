@@ -25,7 +25,7 @@ RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm build
 
 RUN --mount=type=cache,target=/pnpm/store CI=true pnpm install --frozen-lockfile --prod --filter @web-speed-hackathon-2026/server
 
-RUN rm -rf client/src client/types client/babel.config.js client/webpack.config.js client/tsconfig.json client/vitest.config.ts client/postcss.config.js client/node_modules e2e/ reports/ scripts/
+RUN rm -rf client/src client/types client/rspack.config.js client/tsconfig.json client/vitest.config.ts client/postcss.config.js client/node_modules e2e/ reports/ scripts/
 
 FROM base
 

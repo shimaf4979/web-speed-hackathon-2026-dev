@@ -1,11 +1,7 @@
-/// <reference types="webpack-dev-server" />
 const path = require("path");
 
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const { rspack } = require("@rspack/core");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
-const webpack = require("webpack");
 
 const SRC_PATH = path.resolve(__dirname, "./src");
 const PUBLIC_PATH = path.resolve(__dirname, "../public");
@@ -14,7 +10,7 @@ const DIST_PATH = path.resolve(__dirname, "../dist");
 const REPORTS_PATH = path.resolve(__dirname, "../reports");
 const SHOULD_ANALYZE = process.env.ANALYZE === "true";
 
-/** @type {import('webpack').Configuration} */
+/** @type {import('@rspack/core').Configuration} */
 const config = {
   devServer: {
     historyApiFallback: true,
@@ -45,7 +41,7 @@ const config = {
         test: /\.(jsx?|tsx?|mjs|cjs)$/,
         use: [
           {
-            loader: "swc-loader",
+            loader: "builtin:swc-loader",
             options: {
               jsc: {
                 parser: {
@@ -69,10 +65,11 @@ const config = {
       {
         test: /\.css$/i,
         use: [
-          { loader: MiniCssExtractPlugin.loader },
+          { loader: rspack.CssExtractRspackPlugin.loader },
           { loader: "css-loader", options: { url: false } },
           { loader: "postcss-loader" },
         ],
+        type: "javascript/auto",
       },
       {
         resourceQuery: /binary/,
@@ -88,22 +85,21 @@ const config = {
     clean: true,
   },
   plugins: [
-    new webpack.ProvidePlugin({
+    new rspack.ProvidePlugin({
       $: "jquery",
       AudioContext: ["standardized-audio-context", "AudioContext"],
       Buffer: ["buffer", "Buffer"],
       "window.jQuery": "jquery",
     }),
-    new webpack.EnvironmentPlugin({
+    new rspack.EnvironmentPlugin({
       BUILD_DATE: new Date().toISOString(),
-      // Heroku では SOURCE_VERSION 環境変数から commit hash を参照できます
       COMMIT_HASH: process.env.SOURCE_VERSION || "",
       NODE_ENV: "production",
     }),
-    new MiniCssExtractPlugin({
+    new rspack.CssExtractRspackPlugin({
       filename: "styles/[name].css",
     }),
-    new CopyWebpackPlugin({
+    new rspack.CopyRspackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, "node_modules/katex/dist/fonts"),
@@ -111,7 +107,7 @@ const config = {
         },
       ],
     }),
-    new HtmlWebpackPlugin({
+    new rspack.HtmlRspackPlugin({
       inject: false,
       template: path.resolve(SRC_PATH, "./index.html"),
     }),
@@ -166,9 +162,6 @@ const config = {
     usedExports: true,
     providedExports: true,
     sideEffects: true,
-  },
-  cache: {
-    type: "filesystem",
   },
   ignoreWarnings: [
     {
