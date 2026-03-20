@@ -127,6 +127,7 @@ export const DirectMessagePage = ({
             return (
               <li
                 key={message.id}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "0 60px" }}
                 className={classNames(
                   "flex flex-col w-full",
                   isActiveUserSend ? "items-end" : "items-start",
