@@ -54,8 +54,8 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
             import("@imagemagick/magick-wasm"),
             import("@web-speed-hackathon-2026/client/src/utils/convert_image"),
           ]);
-          const blob = await convertImage(file, { extension: MagickFormat.Jpg });
-          return new File([blob], "converted.jpg", { type: "image/jpeg" });
+          const blob = await convertImage(file, { extension: MagickFormat.WebP });
+          return new File([blob], "converted.webp", { type: "image/webp" });
         }),
       )
         .then((convertedFiles) => {
@@ -105,13 +105,13 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
       setIsConverting(true);
 
       import("@web-speed-hackathon-2026/client/src/utils/convert_movie")
-        .then(({ convertMovie }) => convertMovie(file, { extension: "gif", size: undefined }))
+        .then(({ convertMovie }) => convertMovie(file, { extension: "webm", size: undefined }))
         .then((converted) => {
           setParams((params) => ({
             ...params,
             images: [],
-            movie: new File([converted], "converted.gif", {
-              type: "image/gif",
+            movie: new File([converted], "converted.webm", {
+              type: "video/webm",
             }),
             sound: undefined,
           }));
