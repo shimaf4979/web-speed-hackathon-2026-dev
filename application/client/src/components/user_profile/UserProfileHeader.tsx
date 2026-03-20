@@ -1,6 +1,7 @@
 import { FastAverageColor } from "fast-average-color";
 import { ReactEventHandler, useCallback, useState } from "react";
 
+import { AvatarImage } from "@web-speed-hackathon-2026/client/src/components/foundation/AvatarImage";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
 import { formatJapaneseDate, toIsoDateTime } from "@web-speed-hackathon-2026/client/src/utils/date";
 import { getProfileImagePath } from "@web-speed-hackathon-2026/client/src/utils/get_path";
@@ -28,10 +29,12 @@ export const UserProfileHeader = ({ user }: Props) => {
         style={averageColor ? { backgroundColor: averageColor } : undefined}
       ></div>
       <div className="border-cax-border bg-cax-surface-subtle absolute left-2/4 m-0 h-28 w-28 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border sm:h-32 sm:w-32">
-        <img
+        <AvatarImage
           alt=""
           crossOrigin="anonymous"
+          loading="eager"
           onLoad={handleLoadImage}
+          size={128}
           src={getProfileImagePath(user.profileImage.id)}
         />
       </div>

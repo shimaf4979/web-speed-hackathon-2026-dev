@@ -1,3 +1,4 @@
+import { AvatarImage } from "@web-speed-hackathon-2026/client/src/components/foundation/AvatarImage";
 import { Link } from "@web-speed-hackathon-2026/client/src/components/foundation/Link";
 import { ImageArea } from "@web-speed-hackathon-2026/client/src/components/post/ImageArea";
 import { MovieArea } from "@web-speed-hackathon-2026/client/src/components/post/MovieArea";
@@ -20,8 +21,10 @@ export const PostItem = ({ post }: Props) => {
               className="border-cax-border bg-cax-surface-subtle block h-14 w-14 overflow-hidden rounded-full border hover:opacity-95 sm:h-16 sm:w-16"
               to={`/users/${post.user.username}`}
             >
-              <img
+              <AvatarImage
                 alt={post.user.profileImage.alt}
+                loading="eager"
+                size={64}
                 src={getProfileImagePath(post.user.profileImage.id)}
               />
             </Link>

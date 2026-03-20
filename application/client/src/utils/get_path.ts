@@ -1,5 +1,6 @@
-export function getImagePath(imageId: string): string {
-  return `/images/${imageId}.webp`;
+export function getImagePath(imageId: string, variant: "full" | "thumb" = "full"): string {
+  const suffix = variant === "thumb" ? ".thumb" : "";
+  return `/images/${imageId}${suffix}.webp`;
 }
 
 export function getMoviePath(movieId: string): string {

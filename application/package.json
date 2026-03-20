@@ -10,6 +10,8 @@
     "analyze:lighthouse": "node ./scripts/run-lighthouse.mjs",
     "analyze:lighthouse:mobile": "node ./scripts/run-lighthouse.mjs --device mobile",
     "analyze:lighthouse:desktop": "node ./scripts/run-lighthouse.mjs --device desktop",
+    "generate:image-thumbnails": "node ./scripts/generate-image-thumbnails.mjs --apply",
+    "generate:image-thumbnails:dry-run": "node ./scripts/generate-image-thumbnails.mjs",
     "compress:public-assets": "node ./scripts/compress-public-assets.mjs --apply",
     "compress:public-assets:dry-run": "node ./scripts/compress-public-assets.mjs",
     "typecheck": "pnpm run --recursive typecheck",

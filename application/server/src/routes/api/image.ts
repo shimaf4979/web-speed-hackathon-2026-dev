@@ -9,6 +9,7 @@ import { UPLOAD_PATH } from "@web-speed-hackathon-2026/server/src/paths";
 import { convertImageToWebP } from "@web-speed-hackathon-2026/server/src/utils/convert_image";
 
 const EXTENSION = "webp";
+const THUMB_EXTENSION = "thumb.webp";
 
 export const imageRouter = Router();
 
@@ -30,8 +31,12 @@ imageRouter.post("/images", async (req, res) => {
   const imageId = uuidv4();
 
   const filePath = path.resolve(UPLOAD_PATH, `./images/${imageId}.${EXTENSION}`);
+  const thumbPath = path.resolve(UPLOAD_PATH, `./images/${imageId}.${THUMB_EXTENSION}`);
   await fs.mkdir(path.resolve(UPLOAD_PATH, "images"), { recursive: true });
-  await fs.writeFile(filePath, imageBuffer);
+  await Promise.all([
+    fs.writeFile(filePath, imageBuffer),
+    fs.writeFile(thumbPath, await convertImageToWebP(req.body, { maxWidth: 640, quality: 72 })),
+  ]);
 
   return res.status(200).type("application/json").send({ id: imageId });
 });

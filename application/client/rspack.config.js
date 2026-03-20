@@ -134,6 +134,22 @@ const config = {
   },
   optimization: {
     minimize: true,
+    splitChunks: {
+      chunks: "async",
+      minRemainingSize: 0,
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          reuseExistingChunk: true,
+          priority: -10,
+        },
+        default: {
+          minChunks: 2,
+          reuseExistingChunk: true,
+          priority: -20,
+        },
+      },
+    },
     concatenateModules: true,
     usedExports: true,
     providedExports: true,
