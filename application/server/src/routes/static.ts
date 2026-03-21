@@ -1,4 +1,5 @@
 import history from "connect-history-api-fallback";
+import fs from "fs/promises";
 import { Request, Response, Router } from "express";
 import path from "path";
 import serveStatic, { ServeStaticOptions } from "serve-static";
@@ -8,6 +9,7 @@ import {
   PUBLIC_PATH,
   UPLOAD_PATH,
 } from "@web-speed-hackathon-2026/server/src/paths";
+import { renderTermsPage } from "@web-speed-hackathon-2026/server/src/routes/terms_page";
 
 export const staticRouter = Router();
 
@@ -43,9 +45,19 @@ const sendHomeHtml = (_req: Request, res: Response) => {
   res.sendFile(path.resolve(CLIENT_DIST_PATH, "index.html"));
 };
 
+const sendTermsHtml = async (_req: Request, res: Response, next: (error?: unknown) => void) => {
+  try {
+    const indexHtml = await fs.readFile(path.resolve(CLIENT_DIST_PATH, "index.html"), "utf8");
+    res.setHeader("Cache-Control", REVALIDATE_CACHE_HEADER);
+    res.type("html").send(renderTermsPage(indexHtml));
+  } catch (error) {
+    next(error);
+  }
+};
+
 staticRouter.get("/", sendHomeHtml);
-staticRouter.get("/terms", sendHomeHtml);
-staticRouter.get("/terms/", sendHomeHtml);
+staticRouter.get("/terms", sendTermsHtml);
+staticRouter.get("/terms/", sendTermsHtml);
 
 // SPA 対応のため、ファイルが存在しないときに index.html を返す
 staticRouter.use(history());

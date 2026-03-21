@@ -11,6 +11,10 @@ if (window.location.pathname === "/search") {
   void import("@web-speed-hackathon-2026/client/src/containers/SearchContainer");
 }
 
+if (/^\/terms\/?$/.test(window.location.pathname)) {
+  void import("@web-speed-hackathon-2026/client/src/containers/TermContainer");
+}
+
 const mount = () => {
   createRoot(document.getElementById("app")!).render(
     <BrowserRouter>
