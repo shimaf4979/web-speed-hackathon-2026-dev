@@ -181,10 +181,6 @@ export const SearchPage = ({ query, results }: Props) => {
           </div>
         </article>
       )}
-      {sentimentStatus === "loading" && !isNegative && (
-        <div className="text-cax-text-muted px-4 text-xs">感情分析を読み込み中...</div>
-      )}
-
       {query && results.length === 0 ? (
         <div className="text-cax-text-muted flex items-center justify-center p-8">
           検索結果が見つかりませんでした

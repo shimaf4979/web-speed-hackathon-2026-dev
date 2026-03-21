@@ -39,7 +39,7 @@ export const AuthModalPage = ({ onRequestCloseModal, onSubmit }: Props) => {
     try {
       await onSubmit(formData);
     } catch (err) {
-      setServerError(typeof err === "string" ? err : "エラーが発生しました");
+      setServerError(typeof err === "string" ? err : type === "signup" ? "登録に失敗しました" : "パスワードが異なります");
     } finally {
       setSubmitting(false);
     }

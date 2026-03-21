@@ -3,10 +3,16 @@ import httpErrors from "http-errors";
 import { UniqueConstraintError, ValidationError } from "sequelize";
 
 import { User } from "@web-speed-hackathon-2026/server/src/models";
+import { AUTH_ERROR_CODES, validateSignupPayload } from "@web-speed-hackathon-2026/server/src/routes/api/auth_validation";
 
 export const authRouter = Router();
 
 authRouter.post("/signup", async (req, res) => {
+  const validationCode = validateSignupPayload(req.body);
+  if (validationCode !== null) {
+    return res.status(400).type("application/json").send({ code: validationCode });
+  }
+
   try {
     const { id: userId } = await User.create(req.body);
     const user = await User.findByPk(userId);
@@ -15,10 +21,10 @@ authRouter.post("/signup", async (req, res) => {
     return res.status(200).type("application/json").send(user);
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
-      return res.status(400).type("application/json").send({ code: "USERNAME_TAKEN" });
+      return res.status(400).type("application/json").send({ code: AUTH_ERROR_CODES.usernameTaken });
     }
     if (err instanceof ValidationError) {
-      return res.status(400).type("application/json").send({ code: "INVALID_USERNAME" });
+      return res.status(400).type("application/json").send({ code: AUTH_ERROR_CODES.invalidUsername });
     }
     throw err;
   }

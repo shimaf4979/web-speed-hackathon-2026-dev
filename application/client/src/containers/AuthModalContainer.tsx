@@ -12,6 +12,10 @@ interface Props {
 
 const ERROR_MESSAGES: Record<string, string> = {
   INVALID_USERNAME: "ユーザー名に使用できない文字が含まれています",
+  NAME_REQUIRED: "名前を入力してください",
+  PASSWORD_NEEDS_SYMBOL: "パスワードには記号を含める必要があります",
+  PASSWORD_REQUIRED: "パスワードを入力してください",
+  USERNAME_REQUIRED: "ユーザー名を入力してください",
   USERNAME_TAKEN: "ユーザー名が使われています",
 };
 

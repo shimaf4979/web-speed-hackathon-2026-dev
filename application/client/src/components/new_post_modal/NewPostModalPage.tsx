@@ -5,7 +5,7 @@ import { ModalErrorMessage } from "@web-speed-hackathon-2026/client/src/componen
 import { ModalSubmitButton } from "@web-speed-hackathon-2026/client/src/components/modal/ModalSubmitButton";
 import { AttachFileInputButton } from "@web-speed-hackathon-2026/client/src/components/new_post_modal/AttachFileInputButton";
 
-const MAX_UPLOAD_BYTES_LIMIT = 12 * 1024 * 1024;
+const MAX_UPLOAD_BYTES_LIMIT = 10 * 1024 * 1024;
 
 interface SubmitParams {
   images: File[];
@@ -132,11 +132,11 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
       </div>
 
       <ModalSubmitButton disabled={isLoading || params.text === ""} loading={isLoading}>
-        {isLoading ? "投稿中" : "投稿する"}
+        {isLoading ? "変換中" : "投稿する"}
       </ModalSubmitButton>
 
       <ModalErrorMessage>
-        {hasFileError ? "12 MB より小さくしてください" : hasError ? "投稿ができませんでした" : null}
+        {hasFileError ? "10 MB より小さくしてください" : hasError ? "投稿ができませんでした" : null}
       </ModalErrorMessage>
     </form>
   );

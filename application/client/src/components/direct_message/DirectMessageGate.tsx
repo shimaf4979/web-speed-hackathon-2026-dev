@@ -1,4 +1,5 @@
 import { useDocumentTitle } from "@web-speed-hackathon-2026/client/src/hooks/use_document_title";
+import { showDialogById } from "@web-speed-hackathon-2026/client/src/utils/dialog";
 
 interface Props {
   headline: string;
@@ -24,6 +25,7 @@ export const DirectMessageGate = ({
           type="button"
           command="show-modal"
           commandfor={authModalId}
+          onClick={() => showDialogById(authModalId)}
         >
           {buttonLabel}
         </button>

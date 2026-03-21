@@ -32,7 +32,7 @@ export const NewDirectMessageModalPage = ({ id, onSubmit }: Props) => {
       try {
         await onSubmit({ username });
       } catch (err) {
-        setServerError(typeof err === "string" ? err : "エラーが発生しました");
+        setServerError(typeof err === "string" ? err : "ユーザーが見つかりませんでした");
       } finally {
         setSubmitting(false);
       }

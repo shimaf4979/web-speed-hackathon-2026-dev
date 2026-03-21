@@ -10,15 +10,16 @@ import {
   PUBLIC_PATH,
   UPLOAD_PATH,
 } from "@web-speed-hackathon-2026/server/src/paths";
-import { renderTermsPage } from "@web-speed-hackathon-2026/server/src/routes/terms_page";
 
 export const staticRouter = Router();
 
 const LONG_CACHE_HEADER = "public, max-age=31536000, immutable";
+const WEEK_CACHE_HEADER = "public, max-age=604800";
 const REVALIDATE_CACHE_HEADER = "public, max-age=0, must-revalidate";
 const HASHED_CHUNK_PATTERN = /(?:^|\/)chunk-[0-9a-f]{16,}\.[^.]+$/i;
 const UUID_ASSET_PATTERN =
   /(?:^|\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[^.]+$/i;
+const WEEK_CACHE_EXTENSION_PATTERN = /\.(?:webp|webm|avif|svg)$/i;
 const HOME_TIMELINE_LIMIT = 8;
 const PREFETCH_SCRIPT_MARKER = "<script>window.__PREFETCH_JSON__=window.__PREFETCH_JSON__||{}";
 const HTML_SNAPSHOT_PATHS = [
@@ -43,6 +44,11 @@ const setStaticCacheHeader = (rootPath: string) => {
 
     if (relativePath === "index.html") {
       res.setHeader("Cache-Control", REVALIDATE_CACHE_HEADER);
+      return;
+    }
+
+    if (WEEK_CACHE_EXTENSION_PATTERN.test(relativePath)) {
+      res.setHeader("Cache-Control", WEEK_CACHE_HEADER);
       return;
     }
 
@@ -240,21 +246,9 @@ const sendPostHtml = async (req: Request, res: Response, next: (error?: unknown)
   }
 };
 
-const sendTermsHtml = async (_req: Request, res: Response, next: (error?: unknown) => void) => {
-  try {
-    const indexHtml = await getBaseHtml();
-    res.setHeader("Cache-Control", REVALIDATE_CACHE_HEADER);
-    res.type("html").send(renderTermsPage(indexHtml));
-  } catch (error) {
-    next(error);
-  }
-};
-
 staticRouter.get("/", sendHomeHtml);
 staticRouter.get("/posts/:postId", sendPostHtml);
 staticRouter.get("/posts/:postId/", sendPostHtml);
-staticRouter.get("/terms", sendTermsHtml);
-staticRouter.get("/terms/", sendTermsHtml);
 
 // SPA 対応のため、ファイルが存在しないときに index.html を返す
 staticRouter.use(history());
