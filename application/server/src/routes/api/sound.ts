@@ -22,7 +22,8 @@ soundRouter.post("/sounds", async (req, res) => {
     throw new httpErrors.BadRequest();
   }
 
-  const { artist, title } = await extractMetadataFromSound(req.body);
+  const metadataPromise = extractMetadataFromSound(req.body);
+  const waveformPeaksPromise = calculateSoundWaveformPeaks(req.body);
 
   let soundBuffer: Buffer;
   try {
@@ -30,7 +31,11 @@ soundRouter.post("/sounds", async (req, res) => {
   } catch {
     throw new httpErrors.BadRequest("Invalid audio file");
   }
-  const waveformPeaks = await calculateSoundWaveformPeaks(soundBuffer);
+
+  const [{ artist, title }, waveformPeaks] = await Promise.all([
+    metadataPromise,
+    waveformPeaksPromise,
+  ]);
 
   const soundId = uuidv4();
 

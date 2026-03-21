@@ -222,4 +222,4 @@ application/upload/**
 !application/upload/**/.gitkeep
 
 # Generated local SQLite database
-application/server/database.sqlite
+# application/server/database.sqlite

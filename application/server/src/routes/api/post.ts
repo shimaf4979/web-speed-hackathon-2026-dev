@@ -6,12 +6,33 @@ import { Comment, Post } from "@web-speed-hackathon-2026/server/src/models";
 export const postRouter = Router();
 
 postRouter.get("/posts", async (req, res) => {
-  const posts = await Post.findAll({
-    limit: req.query["limit"] != null ? Number(req.query["limit"]) : undefined,
-    offset: req.query["offset"] != null ? Number(req.query["offset"]) : undefined,
-  });
+  const limit = req.query["limit"] != null ? Number(req.query["limit"]) : undefined;
+  const offset = req.query["offset"] != null ? Number(req.query["offset"]) : undefined;
 
-  return res.status(200).type("application/json").send(posts);
+  try {
+    const posts = await Post.findAll({
+      limit,
+      offset,
+    });
+
+    if (!Array.isArray(posts)) {
+      console.error("[debug][GET /api/v1/posts] Post.findAll returned non-array result", {
+        limit,
+        offset,
+        resultType: typeof posts,
+      });
+    }
+
+    return res.status(200).type("application/json").send(posts);
+  } catch (error) {
+    console.error("[debug][GET /api/v1/posts] failed", {
+      limit,
+      offset,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error;
+  }
 });
 
 postRouter.get("/posts/:postId", async (req, res) => {

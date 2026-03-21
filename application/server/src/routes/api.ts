@@ -37,9 +37,15 @@ apiRouter.use(async (err: Error, _req: Request, _res: Response, _next: NextFunct
   throw err;
 });
 
-apiRouter.use(async (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+apiRouter.use(async (err: Error, req: Request, res: Response, _next: NextFunction) => {
   if (!httpErrors.isHttpError(err) || err.status === 500) {
-    console.error(err);
+    console.error("[api error]", {
+      method: req.method,
+      path: req.originalUrl,
+      query: req.query,
+      message: err.message,
+      stack: err.stack,
+    });
   }
 
   return res
